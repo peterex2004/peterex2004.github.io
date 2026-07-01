@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Peter Lau — Lead Delivery & Transformation Manager</title>
+  <style>
+    :root {
+      --navy: #0a192f;
+      --slate: #1e3a5f;
+      --accent: #64ffda;
+      --accent2: #00b4d8;
+      --text: #ccd6f6;
+      --text-dim: #8892b0;
+      --white: #e6f1ff;
+      --card: #112240;
+      --border: #233554;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--navy);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      background: rgba(10, 25, 47, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .nav-logo {
+      font-size: 1.2rem; font-weight: 700; color: var(--accent);
+      letter-spacing: 1px;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--text-dim); text-decoration: none; font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* SECTIONS */
+    section { padding: 6rem 0; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 2rem; }
+
+    .section-label {
+      color: var(--accent); font-size: 0.85rem; font-weight: 600;
+      letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem;
+    }
+    .section-title {
+      font-size: 2rem; font-weight: 700; color: var(--white);
+      margin-bottom: 3rem;
+    }
+    .section-title::after {
+      content: ''; display: block; width: 60px; height: 3px;
+      background: var(--accent); margin-top: 0.5rem;
+    }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding-top: 5rem;
+    }
+    .hero-greeting {
+      color: var(--accent); font-size: 1rem; font-weight: 500;
+      letter-spacing: 2px; margin-bottom: 1rem;
+    }
+    .hero-name {
+      font-size: clamp(2.5rem, 6vw, 4.5rem);
+      font-weight: 800; color: var(--white);
+      line-height: 1.1; margin-bottom: 0.5rem;
+    }
+    .hero-title {
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      font-weight: 600; color: var(--text-dim);
+      margin-bottom: 1.5rem;
+    }
+    .hero-summary {
+      max-width: 600px; color: var(--text-dim);
+      font-size: 1.05rem; line-height: 1.8; margin-bottom: 2.5rem;
+    }
+    .hero-tags {
+      display: flex; flex-wrap: wrap; gap: 0.75rem; margin-bottom: 2.5rem;
+    }
+    .tag {
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--accent); padding: 0.4rem 1rem;
+      border-radius: 50px; font-size: 0.85rem;
+    }
+    .hero-cta { display: flex; gap: 1rem; flex-wrap: wrap; }
+    .btn {
+      padding: 0.8rem 2rem; border-radius: 6px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: all 0.2s;
+    }
+    .btn-primary {
+      background: transparent; border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .btn-primary:hover { background: rgba(100, 255, 218, 0.1); }
+    .btn-secondary {
+      background: var(--accent); border: 2px solid var(--accent);
+      color: var(--navy);
+    }
+    .btn-secondary:hover { opacity: 0.85; }
+
+    /* STATS */
+    .stats-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1.5rem; margin-top: 4rem;
+      padding-top: 3rem; border-top: 1px solid var(--border);
+    }
+    .stat { text-align: center; }
+    .stat-number {
+      font-size: 2.5rem; font-weight: 800; color: var(--accent);
+    }
+    .stat-label { color: var(--text-dim); font-size: 0.9rem; margin-top: 0.25rem; }
+
+    /* EXPERIENCE */
+    #experience { background: var(--navy); }
+    .timeline { position: relative; }
+    .timeline::before {
+      content: ''; position: absolute; left: 0; top: 0;
+      width: 2px; height: 100%; background: var(--border);
+    }
+    .timeline-item {
+      position: relative; padding-left: 2.5rem; margin-bottom: 3rem;
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.5s, transform 0.5s;
+    }
+    .timeline-item.visible { opacity: 1; transform: translateY(0); }
+    .timeline-dot {
+      position: absolute; left: -6px; top: 6px;
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--accent); border: 2px solid var(--navy);
+    }
+    .timeline-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .timeline-card:hover {
+      border-color: var(--accent);
+      transform: translateX(4px);
+    }
+    .timeline-header {
+      display: flex; justify-content: space-between;
+      align-items: flex-start; flex-wrap: wrap; gap: 0.5rem;
+      margin-bottom: 0.75rem;
+    }
+    .timeline-role { font-size: 1.15rem; font-weight: 700; color: var(--white); }
+    .timeline-period {
+      background: rgba(100, 255, 218, 0.1);
+      color: var(--accent); padding: 0.2rem 0.75rem;
+      border-radius: 50px; font-size: 0.8rem; white-space: nowrap;
+    }
+    .timeline-company {
+      color: var(--accent2); font-weight: 600; font-size: 0.95rem;
+      margin-bottom: 1rem;
+    }
+    .timeline-highlights { list-style: none; }
+    .timeline-highlights li {
+      color: var(--text-dim); font-size: 0.92rem; padding: 0.3rem 0;
+      padding-left: 1.25rem; position: relative;
+    }
+    .timeline-highlights li::before {
+      content: '▸'; position: absolute; left: 0; color: var(--accent);
+    }
+    .highlight-bold { color: var(--white); font-weight: 600; }
+
+    /* SKILLS */
+    #skills { background: rgba(17, 34, 64, 0.5); }
+    .skills-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .skill-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem;
+      transition: border-color 0.2s;
+    }
+    .skill-card:hover { border-color: var(--accent); }
+    .skill-icon { font-size: 1.8rem; margin-bottom: 0.75rem; }
+    .skill-name { font-weight: 700; color: var(--white); margin-bottom: 0.5rem; }
+    .skill-desc { color: var(--text-dim); font-size: 0.88rem; line-height: 1.6; }
+
+    /* EDUCATION */
+    #education { background: var(--navy); }
+    .edu-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+    }
+    .edu-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem;
+      transition: border-color 0.2s;
+    }
+    .edu-card:hover { border-color: var(--accent); }
+    .edu-degree { font-size: 1.05rem; font-weight: 700; color: var(--white); margin-bottom: 0.4rem; }
+    .edu-school { color: var(--accent2); font-weight: 600; margin-bottom: 0.3rem; }
+    .edu-period { color: var(--text-dim); font-size: 0.85rem; margin-bottom: 0.75rem; }
+    .edu-detail { color: var(--text-dim); font-size: 0.88rem; }
+    .edu-tag {
+      display: inline-block; background: rgba(100, 255, 218, 0.08);
+      border: 1px solid rgba(100, 255, 218, 0.2);
+      color: var(--accent); padding: 0.2rem 0.6rem;
+      border-radius: 4px; font-size: 0.78rem; margin: 0.2rem 0.2rem 0 0;
+    }
+
+    /* CERTIFICATIONS */
+    #certifications { background: rgba(17, 34, 64, 0.5); }
+    .cert-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+    .cert-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.5rem; text-align: center;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+    .cert-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+    .cert-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+    .cert-name { font-weight: 700; color: var(--white); font-size: 1rem; }
+    .cert-body { color: var(--text-dim); font-size: 0.85rem; margin-top: 0.3rem; }
+
+    /* LANGUAGES */
+    .lang-grid {
+      display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem;
+    }
+    .lang-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 10px; padding: 1rem 1.75rem; text-align: center;
+      min-width: 130px;
+    }
+    .lang-name { color: var(--white); font-weight: 600; }
+    .lang-level { color: var(--accent); font-size: 0.8rem; margin-top: 0.2rem; }
+
+    /* PROJECTS */
+    #projects { background: var(--navy); }
+    .projects-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .project-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem;
+      display: flex; flex-direction: column;
+      transition: border-color 0.2s, transform 0.2s;
+      text-decoration: none;
+    }
+    .project-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+    .project-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+    .project-icon { font-size: 1.4rem; }
+    .project-name { font-weight: 700; color: var(--white); font-size: 1rem; }
+    .project-desc { color: var(--text-dim); font-size: 0.88rem; line-height: 1.6; flex: 1; }
+    .project-lang {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      margin-top: 1rem; color: var(--text-dim); font-size: 0.8rem;
+    }
+    .lang-dot { width: 10px; height: 10px; border-radius: 50%; background: #e34c26; }
+
+    /* CONTACT */
+    #contact { background: rgba(17, 34, 64, 0.5); text-align: center; }
+    .contact-intro {
+      color: var(--text-dim); font-size: 1.05rem; max-width: 500px;
+      margin: 0 auto 2.5rem;
+    }
+    .contact-links {
+      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    }
+    .contact-item {
+      display: flex; align-items: center; gap: 0.6rem;
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--text); text-decoration: none;
+      padding: 0.75rem 1.5rem; border-radius: 8px;
+      font-size: 0.95rem; transition: border-color 0.2s, color 0.2s;
+    }
+    .contact-item:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* FOOTER */
+    footer {
+      text-align: center; padding: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim); font-size: 0.85rem;
+    }
+
+    /* MOBILE */
+    @media (max-width: 640px) {
+      nav { padding: 1rem; }
+      .nav-links { gap: 1rem; }
+      .nav-links a { font-size: 0.8rem; }
+      .timeline::before { display: none; }
+      .timeline-item { padding-left: 0; }
+      .timeline-dot { display: none; }
+      .timeline-header { flex-direction: column; }
+    }
+
+    /* SCROLL ANIMATIONS */
+    .fade-in {
+      opacity: 0; transform: translateY(20px);
+      transition: opacity 0.6s, transform 0.6s;
+    }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">PL</div>
+  <ul class="nav-links">
+    <li><a href="#about">About</a></li>
+    <li><a href="#experience">Experience</a></li>
+    <li><a href="#skills">Skills</a></li>
+    <li><a href="#education">Education</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="about">
+  <div class="container">
+    <p class="hero-greeting">Hello, I'm</p>
+    <h1 class="hero-name">Peter Lau</h1>
+    <h2 class="hero-title">Lead Delivery & Transformation Manager</h2>
+    <p class="hero-summary">
+      8+ years leading large-scale digital programmes across Tier-1 banks in Asia-Pacific.
+      Specialised in multi-market delivery, Agile (SAFe) transformation, and governance of
+      high-complexity platforms — driving measurable outcomes in speed, scalability, and
+      operational consistency.
+    </p>
+    <div class="hero-tags">
+      <span class="tag">Agile / SAFe</span>
+      <span class="tag">PMP®</span>
+      <span class="tag">PSM I & II</span>
+      <span class="tag">FinTech</span>
+      <span class="tag">AI / LLM</span>
+      <span class="tag">Python</span>
+    </div>
+    <div class="hero-cta">
+      <a href="#contact" class="btn btn-primary">Get in touch</a>
+      <a href="#experience" class="btn btn-secondary">View experience</a>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-number">8+</div>
+        <div class="stat-label">Years Experience</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">10</div>
+        <div class="stat-label">APAC Markets Led</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">30+</div>
+        <div class="stat-label">Cross-functional Resources</div>
+      </div>
+      <div class="stat">
+        <div class="stat-number">HKD 20M+</div>
+        <div class="stat-label">Budget Managed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EXPERIENCE -->
+<section id="experience">
+  <div class="container">
+    <p class="section-label">Career</p>
+    <h2 class="section-title">Experience</h2>
+    <div class="timeline">
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-header">
+            <span class="timeline-role">Lead Delivery Manager</span>
+            <span class="timeline-period">Jan 2023 — Present</span>
+          </div>
+          <div class="timeline-company">HSBC · Hong Kong</div>
+          <ul class="timeline-highlights">
+            <li>Leading PWS delivery across <span class="highlight-bold">10 Asia-Pacific markets</span>, managing 3 Delivery Managers, 1 Scrum Squad and 30+ cross-functional resources.</li>
+            <li>Institutionalised <span class="highlight-bold">SAFe delivery practices</span> across all squads — designed coaching programmes and sprint-level execution frameworks.</li>
+            <li>Redesigned end-to-end PWS content operating model, reducing review & publishing cycle time by <span class="highlight-bold">~30%</span>.</li>
+            <li>Indonesia AEM migration: consolidated <span class="highlight-bold">600+ fragmented pages</span> into a redesigned 100-page structure.</li>
+            <li>Mobile Revamp (Northstar HK): reduced FAQ inventory by 10%, improved readability across 20 scopes, cut <span class="highlight-bold">70% image workload</span>.</li>
+            <li>Governed delivery of <span class="highlight-bold">Google AI-powered Search</span> for PWS.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-header">
+            <span class="timeline-role">Delivery Manager</span>
+            <span class="timeline-period">Aug 2021 — Dec 2022</span>
+          </div>
+          <div class="timeline-company">HSBC · Hong Kong</div>
+          <ul class="timeline-highlights">
+            <li>Led end-to-end HK PWS revamp, coordinating <span class="highlight-bold">20+ cross-functional teams</span> (50+ stakeholders) across all major HSBC verticals.</li>
+            <li>Directed UX, Content, SEO and Delivery teams to redesign <span class="highlight-bold">300+ pages</span> under a unified global template.</li>
+            <li>Validated improvements via A/B testing — achieved <span class="highlight-bold">10%–40% uplift</span> in click-through rates across different journeys.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-header">
+            <span class="timeline-role">Project Manager</span>
+            <span class="timeline-period">Aug 2020 — Aug 2021</span>
+          </div>
+          <div class="timeline-company">China Citic Bank International · Hong Kong</div>
+          <ul class="timeline-highlights">
+            <li>Secured <span class="highlight-bold">HKD 20M+</span> budget through project initiation, solution design, and executive approval cycles.</li>
+            <li>Managed mobile banking delivery including InMotion migration and CNCBI connectivity across scope, cost, and schedule.</li>
+            <li>Collaborated with ITPMs and vendors on budget control, financial tracking, and service provider payments.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-card">
+          <div class="timeline-header">
+            <span class="timeline-role">Assistant Project Manager</span>
+            <span class="timeline-period">Oct 2018 — Aug 2020</span>
+          </div>
+          <div class="timeline-company">Hang Seng Bank · Hong Kong</div>
+          <ul class="timeline-highlights">
+            <li>Delivered digital channel (mobile banking) enhancements including <span class="highlight-bold">E-Statement, E-Ticketing, and E-MPF</span>.</li>
+            <li>Performed full-cycle Business Analyst and Agile (Scrum) responsibilities across user stories, sprint planning, and UAT.</li>
+            <li>Coordinated UX/UI, product, and technology stakeholders to streamline requirements and improve delivery efficiency.</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills">
+  <div class="container">
+    <p class="section-label">Expertise</p>
+    <h2 class="section-title">Skills</h2>
+    <div class="skills-grid">
+      <div class="skill-card fade-in">
+        <div class="skill-icon">🗂️</div>
+        <div class="skill-name">Project Governance & Risk Management</div>
+        <div class="skill-desc">End-to-end programme governance, risk frameworks, compliance oversight across multi-market digital platforms.</div>
+      </div>
+      <div class="skill-card fade-in">
+        <div class="skill-icon">🌏</div>
+        <div class="skill-name">Multi-market Program Delivery</div>
+        <div class="skill-desc">Leading concurrent delivery across 10 Asia-Pacific markets with hybrid team structures and cross-border coordination.</div>
+      </div>
+      <div class="skill-card fade-in">
+        <div class="skill-icon">🤝</div>
+        <div class="skill-name">Stakeholder & Change Management</div>
+        <div class="skill-desc">Managing 50+ stakeholders across Product, UX, Content, SEO, and Technology at Tier-1 banking scale.</div>
+      </div>
+      <div class="skill-card fade-in">
+        <div class="skill-icon">⚡</div>
+        <div class="skill-name">Agile Delivery (Scrum / SAFe)</div>
+        <div class="skill-desc">SAFe institutional rollout, coaching programmes, sprint execution frameworks, and performance metrics dashboards.</div>
+      </div>
+      <div class="skill-card fade-in">
+        <div class="skill-icon">🤖</div>
+        <div class="skill-name">AI / LLM Application Design</div>
+        <div class="skill-desc">Governing AI-powered search delivery, LLM-based model benchmarking, and prompt engineering for enterprise use cases.</div>
+      </div>
+      <div class="skill-card fade-in">
+        <div class="skill-icon">🐍</div>
+        <div class="skill-name">Machine Learning & Python</div>
+        <div class="skill-desc">ML model evaluation, thematic index analysis, hit-rate benchmarking — applied in MSc capstone and professional contexts.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- EDUCATION -->
+<section id="education">
+  <div class="container">
+    <p class="section-label">Academic</p>
+    <h2 class="section-title">Education</h2>
+    <div class="edu-grid">
+      <div class="edu-card fade-in">
+        <div class="edu-degree">MSc in Financial Technology & Data Analytics</div>
+        <div class="edu-school">The University of Hong Kong</div>
+        <div class="edu-period">2022 — 2024</div>
+        <div class="edu-detail" style="margin-bottom:0.75rem">
+          Focus areas:
+        </div>
+        <div>
+          <span class="edu-tag">Machine Learning</span>
+          <span class="edu-tag">Cybersecurity</span>
+          <span class="edu-tag">Blockchain</span>
+          <span class="edu-tag">Financial Regulations</span>
+        </div>
+        <div class="edu-detail" style="margin-top:1rem">
+          <strong style="color:var(--white)">Capstone:</strong> LLM-based thematic index evaluation — hit-rate analysis and model benchmarking.
+        </div>
+      </div>
+      <div class="edu-card fade-in">
+        <div class="edu-degree">Bachelor of Economics and Finance</div>
+        <div class="edu-school">The University of Hong Kong</div>
+        <div class="edu-period">2012 — 2015</div>
+        <div class="edu-detail">
+          Foundation in macroeconomics, financial markets, and quantitative analysis.
+        </div>
+      </div>
+    </div>
+
+    <!-- Certifications -->
+    <p class="section-label" style="margin-top:4rem">Credentials</p>
+    <h2 class="section-title">Certifications</h2>
+    <div class="cert-grid">
+      <div class="cert-card fade-in">
+        <div class="cert-icon">🏅</div>
+        <div class="cert-name">Project Management Professional</div>
+        <div class="cert-body">PMP® — PMI</div>
+      </div>
+      <div class="cert-card fade-in">
+        <div class="cert-icon">🏅</div>
+        <div class="cert-name">Professional Scrum Master I</div>
+        <div class="cert-body">PSM I — Scrum.org</div>
+      </div>
+      <div class="cert-card fade-in">
+        <div class="cert-icon">🏅</div>
+        <div class="cert-name">Professional Scrum Master II</div>
+        <div class="cert-body">PSM II — Scrum.org</div>
+      </div>
+    </div>
+
+    <!-- Languages -->
+    <p class="section-label" style="margin-top:4rem">Communication</p>
+    <h2 class="section-title">Languages</h2>
+    <div class="lang-grid">
+      <div class="lang-card">
+        <div class="lang-name">Cantonese</div>
+        <div class="lang-level">Native</div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-name">Mandarin</div>
+        <div class="lang-level">Professional</div>
+      </div>
+      <div class="lang-card">
+        <div class="lang-name">English</div>
+        <div class="lang-level">Professional</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <div class="container">
+    <p class="section-label">Let's Connect</p>
+    <h2 class="section-title" style="text-align:center">Get In Touch</h2>
+    <p class="contact-intro">
+      Open to new opportunities in digital transformation, programme delivery, and fintech leadership roles across Asia-Pacific.
+    </p>
+    <div class="contact-links">
+      <a href="mailto:lauyiucheung@gmail.com" class="contact-item">
+        <span>📧</span> lauyiucheung@gmail.com
+      </a>
+      <a href="tel:+85263336721" class="contact-item">
+        <span>📞</span> (+852) 6333 6721
+      </a>
+      <a href="https://linkedin.com/in/peter-lau-1a276baa" target="_blank" class="contact-item">
+        <span>💼</span> LinkedIn
+      </a>
+      <a href="https://github.com/peterex2004" target="_blank" class="contact-item">
+        <span>🐙</span> GitHub
+      </a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Peter Lau · Built with HTML, CSS & JavaScript · Hosted on GitHub Pages</p>
+</footer>
+
+<script>
+  // Scroll animations
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll('.timeline-item, .fade-in').forEach(el => {
+    observer.observe(el);
+  });
+
+  // Active nav highlight
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-links a');
+
+  window.addEventListener('scroll', () => {
+    let current = '';
+    sections.forEach(section => {
+      if (window.scrollY >= section.offsetTop - 120) {
+        current = section.getAttribute('id');
+      }
+    });
+    navLinks.forEach(link => {
+      link.style.color = link.getAttribute('href') === '#' + current
+        ? 'var(--accent)' : '';
+    });
+  });
+</script>
+</body>
+</html>
