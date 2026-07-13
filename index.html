@@ -296,9 +296,9 @@
 
     /* MOBILE */
     @media (max-width: 640px) {
-      nav { padding: 1rem; }
-      .nav-links { gap: 1rem; }
-      .nav-links a { font-size: 0.8rem; }
+      nav { padding: 0.8rem 0.7rem; }
+      .nav-links { gap: 0.5rem; }
+      .nav-links a { font-size: 0.68rem; }
       .timeline::before { display: none; }
       .timeline-item { padding-left: 0; }
       .timeline-dot { display: none; }
@@ -323,6 +323,7 @@
     <li><a href="#experience">Experience</a></li>
     <li><a href="#skills">Skills</a></li>
     <li><a href="#education">Education</a></li>
+    <li><a href="#projects">Projects</a></li>
     <li><a href="#contact">Contact</a></li>
   </ul>
 </nav>
@@ -561,6 +562,26 @@
         <div class="lang-name">English</div>
         <div class="lang-level">Professional</div>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects">
+  <div class="container">
+    <p class="section-label">Selected Build</p>
+    <h2 class="section-title">Projects</h2>
+    <div class="projects-grid">
+      <a href="project/video/" class="project-card">
+        <div class="project-header">
+          <span class="project-icon">📝</span>
+          <span class="project-name">Transcript Local</span>
+        </div>
+        <p class="project-desc">
+          A privacy-first video-to-text workspace: captions first, local Whisper transcription when needed, and source-aware transcript storage on a personal Mac.
+        </p>
+        <span class="project-lang"><span class="lang-dot" style="background:#64ffda"></span>Product design · Local-first AI</span>
+      </a>
     </div>
   </div>
 </section>
