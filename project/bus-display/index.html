@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bus Arrival Display — Case Study · Peter Lau</title>
+  <style>
+    :root {
+      --navy: #0a192f;
+      --slate: #1e3a5f;
+      --accent: #64ffda;
+      --accent2: #00b4d8;
+      --text: #ccd6f6;
+      --text-dim: #8892b0;
+      --white: #e6f1ff;
+      --card: #112240;
+      --border: #233554;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--navy);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      background: rgba(10, 25, 47, 0.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .nav-logo {
+      font-size: 1.2rem; font-weight: 700; color: var(--accent);
+      letter-spacing: 1px; text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--text-dim); text-decoration: none; font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* LAYOUT */
+    .container { max-width: 900px; margin: 0 auto; padding: 0 2rem; }
+    section { padding: 5rem 0; }
+
+    .section-label {
+      color: var(--accent); font-size: 0.85rem; font-weight: 600;
+      letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem;
+    }
+    .section-title {
+      font-size: 2rem; font-weight: 700; color: var(--white);
+      margin-bottom: 0.4rem;
+    }
+    .section-title::after {
+      content: ''; display: block; width: 60px; height: 3px;
+      background: var(--accent); margin-top: 0.5rem; margin-bottom: 0.5rem;
+    }
+    .section-tc {
+      color: var(--text-dim); font-size: 0.9rem;
+      margin-top: -0.5rem; margin-bottom: 2rem;
+    }
+
+    /* HERO */
+    #hero {
+      min-height: 100vh;
+      display: flex; align-items: center;
+      padding-top: 6rem;
+    }
+    .hero-back {
+      color: var(--text-dim); font-size: 0.85rem; text-decoration: none;
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      margin-bottom: 1.5rem; transition: color 0.2s;
+    }
+    .hero-back:hover { color: var(--accent); }
+    .hero-emoji { font-size: 3rem; margin-bottom: 1rem; display: block; }
+    .hero-title-en {
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      font-weight: 800; color: var(--white); line-height: 1.1;
+      margin-bottom: 0.25rem;
+    }
+    .hero-title-tc {
+      font-size: clamp(1.2rem, 3vw, 2rem);
+      font-weight: 700; color: var(--text-dim);
+      margin-bottom: 1.25rem;
+    }
+    .hero-tagline {
+      font-size: 1.1rem; color: var(--text-dim);
+      max-width: 560px; margin-bottom: 1.75rem; line-height: 1.7;
+    }
+    .tag-row {
+      display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 2rem;
+    }
+    .tag {
+      background: var(--card); border: 1px solid var(--border);
+      color: var(--accent); padding: 0.35rem 0.9rem;
+      border-radius: 50px; font-size: 0.82rem;
+    }
+    .btn {
+      padding: 0.8rem 2rem; border-radius: 6px;
+      font-size: 0.95rem; font-weight: 600; cursor: pointer;
+      text-decoration: none; transition: all 0.2s; display: inline-block;
+    }
+    .btn-primary {
+      background: transparent; border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+    .btn-primary:hover { background: rgba(100,255,218,0.1); }
+    .btn-secondary {
+      background: var(--accent); border: 2px solid var(--accent);
+      color: var(--navy);
+    }
+    .btn-secondary:hover { opacity: 0.85; }
+
+    /* CARDS */
+    .card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 1.75rem;
+      transition: border-color 0.2s;
+    }
+    .card:hover { border-color: var(--accent); }
+
+    /* BODY TEXT */
+    .body-text { color: var(--text-dim); font-size: 0.95rem; line-height: 1.8; margin-bottom: 1rem; }
+    .body-text-tc { color: var(--text-dim); font-size: 0.85rem; opacity: 0.75; margin-bottom: 1.5rem; font-style: italic; }
+
+    /* NUMBERED LIST */
+    .numbered-list { list-style: none; display: flex; flex-direction: column; gap: 1rem; }
+    .numbered-list li {
+      display: flex; gap: 1rem; align-items: flex-start;
+    }
+    .num-badge {
+      background: rgba(100,255,218,0.12); border: 1px solid rgba(100,255,218,0.3);
+      color: var(--accent); font-size: 0.8rem; font-weight: 700;
+      width: 28px; height: 28px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; margin-top: 2px;
+    }
+    .num-text { color: var(--text-dim); font-size: 0.93rem; line-height: 1.7; }
+    .num-text strong { color: var(--white); }
+
+    /* WORKFLOW SCREENS */
+    .screens-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1rem;
+    }
+    .screen-mockup {
+      background: #0d1b2e;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      display: flex; flex-direction: column;
+      min-height: 380px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.4);
+    }
+    .screen-titlebar {
+      background: #112240;
+      border-bottom: 2px solid #ef4444;
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .screen-title-text {
+      font-size: 0.82rem; font-weight: 700; color: #ef4444;
+      letter-spacing: 0.5px;
+    }
+    .screen-body { padding: 10px; flex: 1; display: flex; flex-direction: column; gap: 7px; }
+
+    /* Mockup: route search */
+    .mock-input {
+      background: #112240; border: 2px solid rgba(239,68,68,0.3);
+      border-radius: 8px; padding: 8px 12px;
+      font-size: 1.4rem; font-weight: 700; color: #ef4444;
+      letter-spacing: 3px;
+    }
+    .mock-route-row {
+      background: #0f1e35; border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 10px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .mock-route-num { font-size: 0.95rem; font-weight: 700; color: #ef4444; min-width: 42px; }
+    .mock-badge {
+      font-size: 0.58rem; font-weight: 700; padding: 2px 5px; border-radius: 3px;
+    }
+    .mock-badge-kmb { background: rgba(239,68,68,0.12); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .mock-badge-ctb { background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .mock-dest { font-size: 0.72rem; color: var(--text-dim); }
+    .mock-numpad {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: auto;
+    }
+    .mock-key {
+      background: #1e3a5f; border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px; text-align: center;
+      font-size: 0.85rem; color: var(--text); font-weight: 500;
+    }
+
+    /* Mockup: stop picker */
+    .mock-stop-row {
+      background: #0f1e35; border: 1px solid var(--border);
+      border-radius: 6px; padding: 7px 10px;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .mock-stop-row.expanded {
+      background: rgba(239,68,68,0.07);
+      border-color: rgba(239,68,68,0.35);
+    }
+    .mock-seq { font-size: 0.65rem; color: var(--text-dim); min-width: 18px; }
+    .mock-stop-name { font-size: 0.75rem; color: var(--text); flex: 1; }
+    .mock-eta-green { font-size: 0.72rem; font-weight: 700; color: #64ffda; }
+    .mock-eta-red { font-size: 0.72rem; font-weight: 700; color: #ef4444; }
+    .mock-eta-pills { display: flex; gap: 5px; padding: 4px 0 4px 24px; }
+    .mock-pill {
+      font-size: 0.65rem; font-weight: 700; padding: 2px 8px;
+      border-radius: 4px;
+    }
+    .mock-pill-green { background: rgba(100,255,218,0.1); color: #64ffda; border: 1px solid rgba(100,255,218,0.25); }
+    .mock-pill-red { background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+
+    /* Mockup: departure board */
+    .mock-board-card {
+      background: #0f1e35; border: 1px solid var(--border);
+      border-left: 3px solid #ef4444;
+      border-radius: 6px; padding: 8px 10px;
+    }
+    .mock-board-card.starred { border-left-color: #f59e0b; background: rgba(245,158,11,0.05); }
+    .mock-board-top { display: flex; align-items: baseline; gap: 6px; margin-bottom: 2px; }
+    .mock-board-route { font-size: 1rem; font-weight: 700; color: #ef4444; }
+    .mock-board-dest { font-size: 0.72rem; color: var(--text); }
+    .mock-board-stop { font-size: 0.62rem; color: var(--text-dim); margin-bottom: 5px; }
+    .mock-board-pills { display: flex; gap: 4px; }
+
+    /* ARCHITECTURE */
+    .arch-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;
+      margin-top: 1rem;
+    }
+    .arch-diagram { display: flex; flex-direction: column; gap: 0.75rem; }
+    .arch-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.75rem 1rem;
+      font-size: 0.85rem; color: var(--text);
+      text-align: center;
+    }
+    .arch-box.accent { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+    .arch-box.accent2 { border-color: var(--accent2); color: var(--accent2); }
+    .arch-arrow { text-align: center; color: var(--text-dim); font-size: 1rem; }
+    .arch-bullets { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+    .arch-bullets li {
+      color: var(--text-dim); font-size: 0.9rem; padding-left: 1.25rem; position: relative;
+    }
+    .arch-bullets li::before { content: '▸'; position: absolute; left: 0; color: var(--accent); }
+
+    /* TECH TABLE */
+    .tech-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+    .tech-table th {
+      background: var(--card); color: var(--accent);
+      font-size: 0.82rem; letter-spacing: 2px; text-transform: uppercase;
+      padding: 0.75rem 1rem; text-align: left; border-bottom: 2px solid var(--border);
+    }
+    .tech-table td {
+      padding: 0.85rem 1rem; border-bottom: 1px solid var(--border);
+      color: var(--text-dim); font-size: 0.9rem; vertical-align: top;
+    }
+    .tech-table td:first-child { color: var(--white); font-weight: 600; width: 38%; }
+    .tech-table tr:last-child td { border-bottom: none; }
+    .tech-table tr:hover td { background: rgba(100,255,218,0.03); }
+
+    /* PRIVACY */
+    .privacy-box {
+      background: rgba(100,255,218,0.06);
+      border: 1px solid rgba(100,255,218,0.25);
+      border-radius: 12px; padding: 1.75rem;
+    }
+    .privacy-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+    .privacy-list li {
+      color: var(--text-dim); font-size: 0.93rem; padding-left: 1.5rem; position: relative;
+    }
+    .privacy-list li::before { content: '✓'; position: absolute; left: 0; color: var(--accent); font-weight: 700; }
+
+    /* CONSTRAINTS */
+    .constraint-list { list-style: none; display: flex; flex-direction: column; gap: 0.75rem; }
+    .constraint-list li {
+      color: var(--text-dim); font-size: 0.93rem; padding-left: 1.5rem; position: relative;
+    }
+    .constraint-list li::before { content: '⚠'; position: absolute; left: 0; color: #fb923c; font-size: 0.8rem; top: 2px; }
+
+    /* LIVE DEMO */
+    .demo-box {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 2.5rem;
+      text-align: center;
+    }
+    .demo-box h3 { font-size: 1.4rem; color: var(--white); font-weight: 700; margin-bottom: 0.5rem; }
+    .demo-box p { color: var(--text-dim); margin-bottom: 1.5rem; font-size: 0.95rem; }
+    .demo-note { font-size: 0.82rem; color: var(--text-dim); margin-top: 1rem; }
+
+    /* FOOTER */
+    footer {
+      text-align: center; padding: 2.5rem 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim); font-size: 0.85rem;
+    }
+    footer a { color: var(--accent); text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+
+    /* MOBILE */
+    @media (max-width: 640px) {
+      nav { padding: 1rem; }
+      .nav-links { gap: 1rem; }
+      .nav-links a { font-size: 0.8rem; }
+      .arch-grid { grid-template-columns: 1fr; }
+      .screens-row { grid-template-columns: 1fr; }
+      .tech-table th, .tech-table td { padding: 0.65rem 0.75rem; font-size: 0.82rem; }
+    }
+
+    /* FADE IN */
+    .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s, transform 0.6s; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="/" class="nav-logo">PL</a>
+  <ul class="nav-links">
+    <li><a href="/">About</a></li>
+    <li><a href="/#projects">Projects</a></li>
+    <li><a href="/#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="container">
+    <a href="/#projects" class="hero-back">← Back to Projects</a>
+    <span class="hero-emoji">🚌</span>
+    <h1 class="hero-title-en">Bus Arrival Display</h1>
+    <p class="hero-title-tc">九巴城巴到站資訊板</p>
+    <p class="hero-tagline">
+      A personal real-time departure board for KMB &amp; CTB buses in Hong Kong.
+      Smart route search, live ETA, persistent favourites — no login required.
+    </p>
+    <p class="hero-tagline" style="font-size:0.9rem; margin-bottom:1.5rem; color:var(--text-dim); opacity:0.75; font-style:italic;">
+      香港九巴及城巴實時到站資訊板，支援路線搜尋、即時抵達時間及常用路線儲存，無需登入。
+    </p>
+    <div class="tag-row">
+      <span class="tag">Vanilla JS</span>
+      <span class="tag">KMB API</span>
+      <span class="tag">CTB API</span>
+      <span class="tag">localStorage</span>
+      <span class="tag">No Login</span>
+      <span class="tag">Single File</span>
+    </div>
+    <div style="display:flex; gap:1rem; flex-wrap:wrap;">
+      <a href="/project/bus/" class="btn btn-secondary">Try Live Demo →</a>
+      <a href="/#projects" class="btn btn-primary">← All Projects</a>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM & PURPOSE -->
+<section id="problem">
+  <div class="container">
+    <p class="section-label">Background</p>
+    <h2 class="section-title">Problem &amp; Purpose</h2>
+    <p class="section-tc">問題背景與目的</p>
+    <div class="card fade-in">
+      <p class="body-text">
+        Hong Kong's public bus network spans hundreds of routes operated by KMB and CTB.
+        The official apps are functional, but heavyweight — requiring account creation, location
+        permissions, and multiple taps to reach a live arrival time for a familiar stop.
+      </p>
+      <p class="body-text-tc">
+        香港公共巴士路線眾多，官方應用程式功能完善，但操作繁複，往往需要登入帳戶及多次點擊才能查看到站時間。
+      </p>
+      <p class="body-text">
+        This project is a personal-use tool that loads instantly in a mobile browser, remembers
+        your favourite stops across sessions with no backend, and surfaces the next three departure
+        times within two taps. It uses only open government APIs — no scraping, no unofficial
+        data sources, no user tracking.
+      </p>
+      <p class="body-text-tc">
+        本工具在手機瀏覽器即開即用，無需後端，透過 localStorage 記住常用站點，
+        兩次點擊即可顯示下三班車到站時間，並僅使用香港政府開放交通數據。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- TARGET USER -->
+<section id="target-user" style="background: rgba(17,34,64,0.5);">
+  <div class="container">
+    <p class="section-label">Audience</p>
+    <h2 class="section-title">Target User</h2>
+    <p class="section-tc">目標用戶</p>
+    <div class="card fade-in">
+      <p class="body-text">
+        A daily commuter in Hong Kong who takes the same 2–4 bus routes every day. They know
+        their routes and stops already — they just want the next ETA without friction, on a
+        phone browser, without installing anything or creating an account.
+      </p>
+      <p class="body-text-tc">
+        每天乘搭固定路線的香港通勤者。他們熟悉路線和站點，只需快速查看下一班車時間，
+        無需安裝應用程式或登入帳戶。
+      </p>
+      <p class="body-text">
+        The saved board persists in localStorage, so their common stops reload immediately on
+        every visit — without any server, account, or sync mechanism.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- PRODUCT WORKFLOW -->
+<section id="workflow">
+  <div class="container">
+    <p class="section-label">UX Flow</p>
+    <h2 class="section-title">Product Workflow</h2>
+    <p class="section-tc">產品使用流程</p>
+
+    <div class="screens-row">
+
+      <!-- Screen 1: Route Search -->
+      <div class="fade-in">
+        <div class="screen-mockup">
+          <div class="screen-titlebar">
+            <span style="font-size:0.75rem">🚌</span>
+            <span class="screen-title-text">九巴 ● 路線搜尋</span>
+          </div>
+          <div class="screen-body">
+            <div class="mock-input">2<span style="color:var(--text-dim)">_</span></div>
+            <div class="mock-route-row">
+              <span class="mock-route-num">2A</span>
+              <span class="mock-badge mock-badge-kmb">KMB</span>
+              <span class="mock-dest">往 銅鑼灣</span>
+            </div>
+            <div class="mock-route-row">
+              <span class="mock-route-num">296C</span>
+              <span class="mock-badge mock-badge-kmb">KMB</span>
+              <span class="mock-dest">往 長沙灣</span>
+            </div>
+            <div class="mock-route-row">
+              <span class="mock-route-num">2X</span>
+              <span class="mock-badge mock-badge-ctb">CTB</span>
+              <span class="mock-dest">往 中環</span>
+            </div>
+            <div class="mock-numpad" style="margin-top:auto; padding-top:8px;">
+              <div class="mock-key">7</div><div class="mock-key">8</div><div class="mock-key">9</div>
+              <div class="mock-key">4</div><div class="mock-key">5</div><div class="mock-key">6</div>
+              <div class="mock-key">1</div><div class="mock-key">2</div><div class="mock-key">3</div>
+              <div class="mock-key" style="color:#ef4444">清除</div>
+              <div class="mock-key">0</div>
+              <div class="mock-key" style="color:#8892b0">⌫</div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:1rem; padding:0 0.25rem;">
+          <p style="font-weight:700; color:var(--white); font-size:0.9rem; margin-bottom:0.4rem;">Screen 1 — Route Search</p>
+          <p style="color:var(--text-dim); font-size:0.82rem; line-height:1.6;">
+            Smart numpad built on a prefix trie. Only valid next characters are enabled,
+            preventing dead-end inputs. Covers all 797 KMB routes plus live CTB routes loaded in background.
+          </p>
+        </div>
+      </div>
+
+      <!-- Screen 2: Stop Picker -->
+      <div class="fade-in">
+        <div class="screen-mockup">
+          <div class="screen-titlebar">
+            <span class="screen-title-text">296C &nbsp;往 長沙灣</span>
+          </div>
+          <div class="screen-body">
+            <div style="display:flex; gap:5px; margin-bottom:2px;">
+              <div style="flex:1; background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.35); border-radius:5px; padding:6px; text-align:center; font-size:0.72rem; color:#ef4444; font-weight:600;">往 長沙灣</div>
+              <div style="flex:1; background:#1e3a5f; border:1px solid var(--border); border-radius:5px; padding:6px; text-align:center; font-size:0.72rem; color:var(--text-dim);">往 尚德</div>
+            </div>
+            <div style="font-size:0.62rem; color:var(--text-dim); padding:0 2px 4px;">點選站點以顯示到站時間 · Tap stop for ETA</div>
+            <div class="mock-stop-row">
+              <span class="mock-seq">1</span>
+              <span class="mock-stop-name">尚德總站</span>
+              <span class="mock-eta-green">8分</span>
+            </div>
+            <div class="mock-stop-row">
+              <span class="mock-seq">2</span>
+              <span class="mock-stop-name">唐明街公園</span>
+              <span class="mock-eta-green">9分</span>
+            </div>
+            <div class="mock-stop-row expanded">
+              <span class="mock-seq">3</span>
+              <span class="mock-stop-name" style="color:#ef4444; font-weight:600;">將軍澳隧道轉車站</span>
+              <span class="mock-eta-red">即將</span>
+            </div>
+            <div class="mock-eta-pills">
+              <span class="mock-pill mock-pill-red">即將抵達</span>
+              <span class="mock-pill mock-pill-green">10分</span>
+              <span class="mock-pill mock-pill-green">22分</span>
+            </div>
+            <div class="mock-stop-row">
+              <span class="mock-seq">4</span>
+              <span class="mock-stop-name">觀塘轉車站</span>
+              <span class="mock-eta-green">3分</span>
+            </div>
+            <div class="mock-stop-row">
+              <span class="mock-seq">5</span>
+              <span class="mock-stop-name">長沙灣（海盈邨）</span>
+              <span class="mock-eta-green">7分</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:1rem; padding:0 0.25rem;">
+          <p style="font-weight:700; color:var(--white); font-size:0.9rem; margin-bottom:0.4rem;">Screen 2 — Stop Picker</p>
+          <p style="color:var(--text-dim); font-size:0.82rem; line-height:1.6;">
+            All stops fetched in parallel. ETAs load simultaneously. The stop with the nearest
+            arriving bus auto-expands. Tap the ☆ star to save to your board.
+          </p>
+        </div>
+      </div>
+
+      <!-- Screen 3: Departure Board -->
+      <div class="fade-in">
+        <div class="screen-mockup">
+          <div class="screen-titlebar">
+            <span class="screen-title-text">● 九巴班次</span>
+            <span style="margin-left:auto; font-size:0.58rem; color:var(--text-dim);">更新 08:42:31</span>
+          </div>
+          <div class="screen-body">
+            <div class="mock-board-card starred">
+              <div class="mock-board-top">
+                <span class="mock-board-route">296C</span>
+                <span class="mock-badge mock-badge-kmb">KMB</span>
+                <span class="mock-board-dest">往 長沙灣</span>
+                <span style="margin-left:auto; color:#f59e0b; font-size:0.9rem;">★</span>
+              </div>
+              <div class="mock-board-stop">將軍澳隧道轉車站 · 第 3 站</div>
+              <div class="mock-board-pills">
+                <span class="mock-pill mock-pill-red">即將抵達</span>
+                <span class="mock-pill mock-pill-green">10分</span>
+                <span class="mock-pill mock-pill-green">22分</span>
+              </div>
+            </div>
+            <div class="mock-board-card">
+              <div class="mock-board-top">
+                <span class="mock-board-route">2A</span>
+                <span class="mock-badge mock-badge-kmb">KMB</span>
+                <span class="mock-board-dest">往 銅鑼灣</span>
+              </div>
+              <div class="mock-board-stop">觀塘轉車站 · 第 6 站</div>
+              <div class="mock-board-pills">
+                <span class="mock-pill mock-pill-green">4分</span>
+                <span class="mock-pill mock-pill-green">16分</span>
+                <span class="mock-pill mock-pill-green">28分</span>
+              </div>
+            </div>
+            <div class="mock-board-card">
+              <div class="mock-board-top">
+                <span class="mock-board-route">1A</span>
+                <span class="mock-badge mock-badge-ctb">CTB</span>
+                <span class="mock-board-dest">往 赤柱</span>
+              </div>
+              <div class="mock-board-stop">銅鑼灣 · 第 12 站</div>
+              <div class="mock-board-pills">
+                <span class="mock-pill mock-pill-green">7分</span>
+                <span class="mock-pill mock-pill-green">19分</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:1rem; padding:0 0.25rem;">
+          <p style="font-weight:700; color:var(--white); font-size:0.9rem; margin-bottom:0.4rem;">Screen 3 — Departure Board</p>
+          <p style="color:var(--text-dim); font-size:0.82rem; line-height:1.6;">
+            Auto-refreshes every 15 seconds. Starred items stay at top.
+            Edit mode reveals remove buttons. Tap any card to jump to stop picker.
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- KEY UX DECISIONS -->
+<section id="ux-decisions" style="background: rgba(17,34,64,0.5);">
+  <div class="container">
+    <p class="section-label">Design</p>
+    <h2 class="section-title">Key UX Decisions</h2>
+    <p class="section-tc">主要設計決策</p>
+    <ul class="numbered-list">
+      <li>
+        <span class="num-badge">1</span>
+        <span class="num-text"><strong>Fixed-height stop tiles.</strong> Each stop row has a fixed height and never reflows neighbours when it expands — only the expanded tile itself grows, preventing disorienting layout jumps during a live ETA fetch.</span>
+      </li>
+      <li>
+        <span class="num-badge">2</span>
+        <span class="num-text"><strong>Numpad-first input.</strong> A phone keyboard covers half the screen and interrupts the route list. A custom numpad keeps the full list visible while typing, and the prefix trie dims invalid keys in real time — no mis-taps, no dead ends.</span>
+      </li>
+      <li>
+        <span class="num-badge">3</span>
+        <span class="num-text"><strong>Parallel ETA fetch.</strong> All stop ETAs for a route are fetched simultaneously via <code style="color:var(--accent); font-size:0.85em">Promise.allSettled</code>, not sequentially. The stop list renders immediately with loading states, then updates in place once all fetches resolve — typically under two seconds.</span>
+      </li>
+      <li>
+        <span class="num-badge">4</span>
+        <span class="num-text"><strong>Stale token cancellation.</strong> Each direction-switch increments an <code style="color:var(--accent); font-size:0.85em">etaFetchToken</code>. When a fetch resolves, it checks if the token still matches — stale responses from previous direction selections are silently discarded.</span>
+      </li>
+      <li>
+        <span class="num-badge">5</span>
+        <span class="num-text"><strong>Opposite-direction tile.</strong> A single tap at the bottom of the stop list flips to the return direction without going back to search. This cuts three taps to one for commuters who switch direction frequently.</span>
+      </li>
+    </ul>
+  </div>
+</section>
+
+<!-- ARCHITECTURE -->
+<section id="architecture">
+  <div class="container">
+    <p class="section-label">System</p>
+    <h2 class="section-title">Architecture</h2>
+    <p class="section-tc">系統架構</p>
+    <div class="arch-grid fade-in">
+      <div class="arch-diagram">
+        <div class="arch-box accent">Browser (Single HTML File)</div>
+        <div class="arch-arrow">↕</div>
+        <div class="arch-box">Screen Router (showScreen)</div>
+        <div class="arch-arrow">↙ &nbsp;&nbsp;&nbsp; ↓ &nbsp;&nbsp;&nbsp; ↘</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px;">
+          <div class="arch-box" style="font-size:0.75rem; padding:0.5rem;">Route Search</div>
+          <div class="arch-box" style="font-size:0.75rem; padding:0.5rem;">Stop Picker</div>
+          <div class="arch-box" style="font-size:0.75rem; padding:0.5rem;">Departure Board</div>
+        </div>
+        <div class="arch-arrow">↓</div>
+        <div class="arch-box accent2">apiFetch() wrapper</div>
+        <div class="arch-arrow">↙ &nbsp;&nbsp;&nbsp; ↘</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+          <div class="arch-box" style="font-size:0.78rem; padding:0.6rem;">KMB API<br><span style="color:var(--text-dim); font-size:0.7rem;">etabus.gov.hk</span></div>
+          <div class="arch-box" style="font-size:0.78rem; padding:0.6rem;">CTB API<br><span style="color:var(--text-dim); font-size:0.7rem;">rt.data.gov.hk</span></div>
+        </div>
+        <div class="arch-arrow">↑ ↑</div>
+        <div class="arch-box">localStorage (board state)</div>
+      </div>
+      <ul class="arch-bullets">
+        <li><strong style="color:var(--white)">Zero dependencies</strong> — no frameworks, no build tools. One HTML file, self-contained CSS and JS.</li>
+        <li><strong style="color:var(--white)">Prefix trie</strong> — built in-memory from 797 KMB routes on load, extended live as CTB routes arrive.</li>
+        <li><strong style="color:var(--white)">Route registry</strong> — a <code style="color:var(--accent); font-size:0.85em">Map&lt;company:route, variants[]&gt;</code> built from both APIs, used for destination labels and direction logic.</li>
+        <li><strong style="color:var(--white)">KMB bulk stop cache</strong> — 4,000+ stops fetched once and stored in a <code style="color:var(--accent); font-size:0.85em">Map</code> for instant name lookups. CTB stops are fetched individually and cached per session.</li>
+        <li><strong style="color:var(--white)">15-second refresh loop</strong> — <code style="color:var(--accent); font-size:0.85em">setInterval</code> on the board screen; cleared whenever navigating away.</li>
+        <li><strong style="color:var(--white)">localStorage persistence</strong> — board JSON serialised on every change; loaded synchronously on startup.</li>
+        <li><strong style="color:var(--white)">Offline banner</strong> — listens to <code style="color:var(--accent); font-size:0.85em">online/offline</code> events and shows a fixed banner when connectivity is lost.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- TECHNICAL DECISIONS -->
+<section id="technical" style="background: rgba(17,34,64,0.5);">
+  <div class="container">
+    <p class="section-label">Engineering</p>
+    <h2 class="section-title">Technical Decisions</h2>
+    <p class="section-tc">技術選擇</p>
+    <div class="fade-in" style="overflow-x:auto;">
+      <table class="tech-table">
+        <thead>
+          <tr>
+            <th>Decision</th>
+            <th>Rationale</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Vanilla JS, no framework</td>
+            <td>Single-file constraint eliminates any build step. DOM is simple enough that framework overhead would outweigh benefit.</td>
+          </tr>
+          <tr>
+            <td>Hardcoded KMB route list (797 routes)</td>
+            <td>KMB route numbers are stable. Embedding them allows the prefix trie to function instantly on load, before any API call completes.</td>
+          </tr>
+          <tr>
+            <td>Promise.allSettled for all parallel fetches</td>
+            <td>Partial failures (e.g. one stop returning 404) should not abort the entire ETA display. Each stop resolves independently.</td>
+          </tr>
+          <tr>
+            <td>etaFetchToken (integer counter)</td>
+            <td>Async direction-switch creates a race condition. A monotonic token means only the most recent fetch's result is applied.</td>
+          </tr>
+          <tr>
+            <td>KMB bulk /stop endpoint cached once</td>
+            <td>Fetching 4,000+ stop names individually would take too long and exceed rate limits. One bulk fetch on first use, then instant Map lookups.</td>
+          </tr>
+          <tr>
+            <td>CTB individual stop fetches, cached per session</td>
+            <td>CTB has no bulk-stop endpoint in the public API. Per-stop fetches are parallelised and memoised in ctbStopCache to avoid repeated requests.</td>
+          </tr>
+          <tr>
+            <td>localStorage, no backend</td>
+            <td>Eliminates auth, server costs, and privacy concerns entirely. Acceptable trade-off for a personal-use tool where one browser is the primary client.</td>
+          </tr>
+          <tr>
+            <td>CSS-only responsive layout, no media queries for core flow</td>
+            <td>The three-screen model uses 100dvh per screen, so it works on any viewport without JS viewport detection. Media queries only adjust density for landscape.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- PRIVACY & SECURITY -->
+<section id="privacy">
+  <div class="container">
+    <p class="section-label">Trust</p>
+    <h2 class="section-title">Privacy &amp; Security</h2>
+    <p class="section-tc">私隱及安全</p>
+    <div class="privacy-box fade-in">
+      <p class="body-text" style="margin-bottom:0.75rem; font-size:1rem; color:var(--white);">
+        This app collects nothing about you.
+      </p>
+      <p class="body-text-tc" style="margin-bottom:0;">本工具不收集任何用戶資料。</p>
+      <ul class="privacy-list">
+        <li>No account creation, no login, no email required.</li>
+        <li>All preferences stored in your own browser's localStorage only — never sent anywhere.</li>
+        <li>No analytics scripts, no tracking pixels, no third-party scripts of any kind.</li>
+        <li>All data comes from open Hong Kong Government APIs (KMB ETA API, Citybus NWFB API) — the same data used by official apps.</li>
+        <li>Clearing your browser's site data removes all saved state entirely.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- CONSTRAINTS -->
+<section id="constraints" style="background: rgba(17,34,64,0.5);">
+  <div class="container">
+    <p class="section-label">Honest Assessment</p>
+    <h2 class="section-title">Constraints</h2>
+    <p class="section-tc">限制說明</p>
+    <ul class="constraint-list fade-in">
+      <li><strong style="color:var(--white)">Requires internet.</strong> All ETA data is fetched live from public APIs. The app does not function offline beyond showing cached board layout.</li>
+      <li><strong style="color:var(--white)">ETA accuracy depends on the API.</strong> Arrival predictions are provided by the bus operators via government APIs. Delays, cancellations, or missing data reflect the upstream source.</li>
+      <li><strong style="color:var(--white)">localStorage cleared = data lost.</strong> There is no cloud sync or backup. Clearing browser storage or using a new device requires rebuilding your board from scratch.</li>
+      <li><strong style="color:var(--white)">CTB individual stop fetches on first load.</strong> CTB has no bulk-stop endpoint, so loading a CTB route's stops requires one API call per stop. This is noticeably slower than KMB on first visit, though cached for the session.</li>
+      <li><strong style="color:var(--white)">Single-user, single-browser design.</strong> Designed for personal use on one device. Not intended as a multi-user or shared application.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- LIVE DEMO -->
+<section id="demo">
+  <div class="container">
+    <p class="section-label">Try It</p>
+    <h2 class="section-title">Live Demo</h2>
+    <p class="section-tc">立即試用</p>
+    <div class="demo-box fade-in">
+      <h3>🚌 Bus Arrival Display</h3>
+      <p>Runs entirely in your browser. No account needed.<br>
+      <span style="font-size:0.85rem; opacity:0.75;">在您的瀏覽器直接運行，無需帳戶或安裝。</span></p>
+      <a href="/project/bus/" class="btn btn-secondary">Open App →</a>
+      <p class="demo-note">
+        Data sourced from Hong Kong Government open APIs: KMB ETA API &amp; Citybus-NWFB API.<br>
+        資料來源：香港政府公共交通開放數據API
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <p style="margin-bottom:0.5rem;">
+    <a href="/#projects">← Back to all projects</a> &nbsp;·&nbsp;
+    <a href="/">Peter Lau — Portfolio</a>
+  </p>
+  <p>© 2026 Peter Lau · Built with HTML, CSS &amp; JavaScript · Hosted on GitHub Pages</p>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
