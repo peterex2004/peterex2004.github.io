@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Projects — Peter Lau</title>
+  <style>
+    :root {
+      --navy: #0a192f;
+      --slate: #1e3a5f;
+      --accent: #64ffda;
+      --accent2: #00b4d8;
+      --text: #ccd6f6;
+      --text-dim: #8892b0;
+      --white: #e6f1ff;
+      --card: #112240;
+      --border: #233554;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--navy); color: var(--text); line-height: 1.6;
+    }
+
+    /* NAV */
+    nav {
+      position: fixed; top: 0; width: 100%; z-index: 100;
+      background: rgba(10, 25, 47, 0.92); backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      padding: 1rem 2rem;
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .nav-logo {
+      font-size: 1.2rem; font-weight: 700; color: var(--accent);
+      letter-spacing: 1px; text-decoration: none;
+    }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      color: var(--text-dim); text-decoration: none; font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+
+    .container { max-width: 1000px; margin: 0 auto; padding: 0 2rem; }
+
+    /* HEADER */
+    header {
+      padding: 9rem 0 4rem;
+    }
+    .section-label {
+      color: var(--accent); font-size: 0.85rem; font-weight: 600;
+      letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem;
+    }
+    .page-title {
+      font-size: clamp(2.2rem, 5vw, 3.2rem); font-weight: 800;
+      color: var(--white); margin-bottom: 1rem;
+    }
+    .page-title::after {
+      content: ''; display: block; width: 60px; height: 3px;
+      background: var(--accent); margin-top: 0.75rem;
+    }
+    .page-intro {
+      color: var(--text-dim); font-size: 1.05rem; max-width: 620px; margin-top: 1.5rem;
+    }
+
+    /* PROJECTS */
+    .projects { padding-bottom: 6rem; }
+    .project-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 14px; padding: 2rem;
+      margin-bottom: 1.75rem;
+      transition: border-color 0.2s, transform 0.2s;
+      opacity: 0; transform: translateY(20px);
+    }
+    .project-card.visible { opacity: 1; transform: translateY(0); }
+    .project-card:hover { border-color: var(--accent); transform: translateY(-4px); }
+    .project-top {
+      display: flex; align-items: flex-start; gap: 1rem;
+      margin-bottom: 1rem; flex-wrap: wrap;
+    }
+    .project-icon {
+      font-size: 2rem; background: rgba(100,255,218,0.08);
+      border: 1px solid var(--border); border-radius: 12px;
+      width: 60px; height: 60px; display: flex; align-items: center;
+      justify-content: center; flex-shrink: 0;
+    }
+    .project-headings { flex: 1; min-width: 200px; }
+    .project-name { font-size: 1.3rem; font-weight: 700; color: var(--white); }
+    .project-sub { color: var(--accent2); font-size: 0.9rem; font-weight: 600; margin-top: 0.2rem; }
+    .project-badge {
+      background: rgba(100, 255, 218, 0.1); color: var(--accent);
+      padding: 0.25rem 0.8rem; border-radius: 50px; font-size: 0.78rem;
+      white-space: nowrap; align-self: center;
+    }
+    .project-desc { color: var(--text-dim); font-size: 0.98rem; margin-bottom: 1.25rem; }
+    .project-desc strong { color: var(--white); }
+    .tech-tags { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tech-tag {
+      background: var(--navy); border: 1px solid var(--border);
+      color: var(--text-dim); padding: 0.3rem 0.85rem;
+      border-radius: 6px; font-size: 0.8rem;
+    }
+    .project-actions { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+    .btn {
+      padding: 0.65rem 1.5rem; border-radius: 6px; font-size: 0.9rem;
+      font-weight: 600; cursor: pointer; text-decoration: none;
+      transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+    }
+    .btn-primary { background: var(--accent); border: 2px solid var(--accent); color: var(--navy); }
+    .btn-primary:hover { opacity: 0.85; }
+    .btn-outline { background: transparent; border: 2px solid var(--border); color: var(--text); }
+    .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+    .project-note { color: var(--text-dim); font-size: 0.85rem; font-style: italic; }
+
+    footer {
+      text-align: center; padding: 2rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim); font-size: 0.85rem;
+    }
+
+    @media (max-width: 640px) {
+      nav { padding: 1rem; }
+      .nav-links { gap: 1rem; }
+      .nav-links a { font-size: 0.8rem; }
+      header { padding: 7rem 0 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a href="/" class="nav-logo">PL</a>
+  <ul class="nav-links">
+    <li><a href="/#about">Home</a></li>
+    <li><a href="/#experience">Experience</a></li>
+    <li><a href="/#skills">Skills</a></li>
+    <li><a href="/projects/" class="active">Projects</a></li>
+    <li><a href="/#contact">Contact</a></li>
+  </ul>
+</nav>
+
+<header>
+  <div class="container">
+    <p class="section-label">Portfolio</p>
+    <h1 class="page-title">Projects</h1>
+    <p class="page-intro">
+      A selection of things I've designed and built — from live web applications to
+      applied machine-learning research. Each reflects hands-on delivery, not just management.
+    </p>
+  </div>
+</header>
+
+<section class="projects">
+  <div class="container">
+
+    <!-- KMB Bus Display -->
+    <div class="project-card">
+      <div class="project-top">
+        <div class="project-icon">🚌</div>
+        <div class="project-headings">
+          <div class="project-name">KMB Bus Display</div>
+          <div class="project-sub">Real-time transit web app</div>
+        </div>
+        <span class="project-badge">Live Demo</span>
+      </div>
+      <p class="project-desc">
+        A real-time bus arrival board that pulls live estimated-time-of-arrival data from
+        Hong Kong's <strong>KMB open data API</strong> and renders it in a clean, responsive
+        display. Demonstrates front-end development, asynchronous API calls, and live data
+        handling — end to end.
+      </p>
+      <div class="tech-tags">
+        <span class="tech-tag">HTML</span>
+        <span class="tech-tag">JavaScript</span>
+        <span class="tech-tag">REST API</span>
+        <span class="tech-tag">Responsive UI</span>
+      </div>
+      <div class="project-actions">
+        <a href="/kmb-bus-display/" target="_blank" class="btn btn-primary">View live demo →</a>
+      </div>
+    </div>
+
+    <!-- Portfolio Website -->
+    <div class="project-card">
+      <div class="project-top">
+        <div class="project-icon">🌐</div>
+        <div class="project-headings">
+          <div class="project-name">Personal Portfolio Website</div>
+          <div class="project-sub">The site you're viewing now</div>
+        </div>
+        <span class="project-badge">Live</span>
+      </div>
+      <p class="project-desc">
+        Designed and coded from scratch — no templates or site builders. Features a responsive
+        layout, scroll animations, and an experience timeline. Deployed on <strong>GitHub Pages</strong>
+        with a custom domain routed through <strong>Cloudflare DNS</strong>. This page itself is
+        the proof of the work.
+      </p>
+      <div class="tech-tags">
+        <span class="tech-tag">HTML</span>
+        <span class="tech-tag">CSS</span>
+        <span class="tech-tag">JavaScript</span>
+        <span class="tech-tag">GitHub Pages</span>
+        <span class="tech-tag">Cloudflare DNS</span>
+      </div>
+      <div class="project-actions">
+        <a href="/" class="btn btn-outline">View site →</a>
+      </div>
+    </div>
+
+    <!-- MSc Capstone -->
+    <div class="project-card">
+      <div class="project-top">
+        <div class="project-icon">🤖</div>
+        <div class="project-headings">
+          <div class="project-name">LLM-based Thematic Index Evaluation</div>
+          <div class="project-sub">MSc Capstone · The University of Hong Kong</div>
+        </div>
+        <span class="project-badge">Research</span>
+      </div>
+      <p class="project-desc">
+        Capstone research for my <strong>MSc in Financial Technology & Data Analytics</strong>.
+        Evaluated the use of large language models to construct thematic investment indices,
+        applying <strong>hit-rate analysis</strong> and systematic <strong>model benchmarking</strong>
+        to assess reliability against baseline approaches.
+      </p>
+      <div class="tech-tags">
+        <span class="tech-tag">Python</span>
+        <span class="tech-tag">LLM / Prompting</span>
+        <span class="tech-tag">Model Evaluation</span>
+        <span class="tech-tag">Financial Data</span>
+      </div>
+      <p class="project-note">Academic project — full methodology available on request.</p>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <p>© 2026 Peter Lau · Built with HTML, CSS & JavaScript · Hosted on GitHub Pages</p>
+</footer>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.project-card').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
