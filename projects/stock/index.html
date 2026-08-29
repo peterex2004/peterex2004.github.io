@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Stock Analyst — Deterministic Equity Research · Peter Lau</title>
+<meta name="description" content="A deterministic, rule-based equity research tool: five-factor quant ratings graded against sector peers, DCF valuation, and bilingual IB-style reports — with no LLM in the critical path." />
+<style>
+  :root{
+    --navy:#0a192f; --slate:#1e3a5f; --accent:#64ffda; --accent2:#00b4d8;
+    --text:#ccd6f6; --text-dim:#8892b0; --white:#e6f1ff;
+    --card:#112240; --border:#233554;
+    --warn:#ffb703;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--navy);color:var(--text);line-height:1.6}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+
+  nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(10,25,47,.92);
+      backdrop-filter:blur(10px);border-bottom:1px solid var(--border);
+      padding:1rem 2rem;display:flex;justify-content:space-between;align-items:center}
+  .nav-logo{color:var(--accent);font-weight:700;letter-spacing:.5px}
+  .nav-back{color:var(--text-dim);font-size:.9rem}
+
+  .container{max-width:900px;margin:0 auto;padding:0 1.5rem}
+  header.hero{padding:9rem 0 3rem}
+  .eyebrow{color:var(--accent);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+           font-size:.82rem;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.9rem}
+  h1{color:var(--white);font-size:clamp(1.9rem,5vw,2.9rem);line-height:1.15;margin-bottom:.9rem}
+  .lede{color:var(--text-dim);font-size:1.08rem;max-width:64ch}
+
+  .chips{display:flex;flex-wrap:wrap;gap:.5rem;margin-top:1.6rem}
+  .chip{border:1px solid var(--border);border-radius:999px;padding:.32rem .8rem;
+        font-size:.78rem;color:var(--text-dim);background:var(--card)}
+
+  section{padding:2.6rem 0;border-top:1px solid var(--border)}
+  h2{color:var(--white);font-size:1.35rem;margin-bottom:.5rem}
+  h2 .num{color:var(--accent);font-family:ui-monospace,monospace;font-size:.95rem;margin-right:.55rem}
+  section p{margin-bottom:1rem;max-width:70ch}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem;margin-top:1.2rem}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1.1rem}
+  .card h3{color:var(--white);font-size:.98rem;margin-bottom:.4rem}
+  .card p{color:var(--text-dim);font-size:.88rem;margin:0}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:1rem;margin:1.4rem 0}
+  .stat{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem;text-align:center}
+  .stat b{display:block;color:var(--accent);font-size:1.55rem;line-height:1.1}
+  .stat span{color:var(--text-dim);font-size:.78rem}
+
+  ul.clean{list-style:none;margin:.4rem 0 1rem}
+  ul.clean li{padding-left:1.3rem;position:relative;margin-bottom:.55rem;color:var(--text-dim);max-width:70ch}
+  ul.clean li::before{content:"▹";position:absolute;left:0;color:var(--accent)}
+  ul.clean li b{color:var(--text)}
+
+  .cta{display:inline-block;border:1px solid var(--accent);color:var(--accent);
+       border-radius:6px;padding:.7rem 1.25rem;font-size:.92rem;margin-top:.4rem}
+  .cta:hover{background:rgba(100,255,218,.08);text-decoration:none}
+
+  .notice{border:1px solid var(--border);border-left:3px solid var(--warn);
+          background:rgba(255,183,3,.06);border-radius:8px;padding:1rem 1.15rem;margin:1.2rem 0}
+  .notice b{color:var(--warn)}
+  .notice p{color:var(--text-dim);font-size:.9rem;margin:.35rem 0 0}
+
+  footer{border-top:1px solid var(--border);padding:2rem 0 3rem;color:var(--text-dim);font-size:.84rem}
+  @media(max-width:600px){header.hero{padding:7rem 0 2rem}nav{padding:.9rem 1.1rem}}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-logo">PL</span>
+  <a class="nav-back" href="/projects/">← Back to projects</a>
+</nav>
+
+<div class="container">
+
+  <header class="hero">
+    <p class="eyebrow">Side Project · 2026</p>
+    <h1>Stock Analyst<br /><span style="color:var(--text-dim);font-size:.55em">確定性股票研究終端</span></h1>
+    <p class="lede">
+      A deterministic equity research tool. Type a US ticker and it returns a five-factor
+      quant rating graded against 489 sector peers, a DCF and multiples valuation, technical
+      trend and key levels, analyst revisions, macro regime — as a bilingual dashboard.
+      Every number is computed in Python. <b style="color:var(--text)">There is no LLM
+      anywhere in the critical path.</b>
+    </p>
+    <div class="chips">
+      <span class="chip">Python · FastAPI · SQLite</span>
+      <span class="chip">yfinance · SEC EDGAR · FRED</span>
+      <span class="chip">Deterministic scoring</span>
+      <span class="chip">EN / 中文</span>
+      <span class="chip">Offline-capable</span>
+    </div>
+  </header>
+
+  <section>
+    <h2><span class="num">01.</span>Why build it this way</h2>
+    <p>
+      Most "AI stock analysis" asks a language model to read filings and opine. That is fast
+      to build and impossible to audit — the same prompt can produce different numbers on
+      different days, and a confident wrong figure is indistinguishable from a right one.
+    </p>
+    <p>
+      This tool inverts that. All ratings, valuations and trend calls come from rules applied
+      to filed data, so the same inputs always produce the same output and every grade can be
+      reconstructed by hand from the numbers printed beside it. The report text is generated
+      from paired English/中文 templates filled with computed values, not written by a model.
+    </p>
+    <div class="stats">
+      <div class="stat"><b>489</b><span>sector peers graded against</span></div>
+      <div class="stat"><b>5</b><span>rating factors</span></div>
+      <div class="stat"><b>102</b><span>tests</span></div>
+      <div class="stat"><b>0</b><span>LLM calls at runtime</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">02.</span>What it produces</h2>
+    <div class="grid">
+      <div class="card"><h3>Quant rating</h3><p>Valuation, Growth, Profitability, Momentum and Revisions each graded A+ to F, rolled into a 1.0–5.0 score with a stated confidence and the reasons behind it.</p></div>
+      <div class="card"><h3>Intrinsic value</h3><p>Five-year FCF discounted cash flow with a WACC × terminal-growth sensitivity table, triangulated against five valuation multiples into a fair-value range.</p></div>
+      <div class="card"><h3>Peer-relative grading</h3><p>Each metric ranked within its own sector across a 489-company universe — so "expensive" means expensive versus peers, not just versus its own past.</p></div>
+      <div class="card"><h3>Technicals</h3><p>Wilder RSI/ADX/ATR, moving-average structure, a trend-regime call with pass/fail reasoning, and support/resistance clustered from swing pivots.</p></div>
+      <div class="card"><h3>Long-term tracking</h3><p>Snapshots each run and reports what actually moved — rating changes, trend flips, and monitoring triggers crossing from pending to fired.</p></div>
+      <div class="card"><h3>Honest gaps</h3><p>Missing data is named, never neutralised. A factor without inputs is excluded and the weights renormalise, rather than quietly scoring as average.</p></div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="num">03.</span>The engineering story</h2>
+    <p>
+      Built across nine specification-led waves. I wrote the spec and the acceptance criteria
+      for each wave, an agent implemented it, and I verified the result against numbers I had
+      computed independently <em>beforehand</em> — from raw SEC filings, live broker quotes,
+      or a separate implementation — rather than reading the code and judging whether it
+      looked right.
+    </p>
+    <p>
+      That verification step found <b style="color:var(--text)">16 defects that the
+      implementation's own passing test suite did not</b>. Almost none were crashes. They were
+      plausible wrong numbers: a fiscal year counted twice because two data sources dated it
+      three days apart; a terminal value compared undiscounted against a discounted total,
+      producing an impossible 112%; a yield curve rendered as 45% instead of 45 basis points;
+      report text asserting things the analysis itself contradicted.
+    </p>
+    <p>
+      On financial software that is the failure mode that costs money — not the one that
+      throws an exception.
+    </p>
+    <ul class="clean">
+      <li><b>Never silently skip.</b> Any check that cannot run says so, in the report.</li>
+      <li><b>Availability is not direction.</b> A factor going missing is a coverage change, never a downgrade.</li>
+      <li><b>No look-ahead.</b> Retroactive rating backtests are deliberately refused — free fundamentals are restated to today, so scoring a past date with them would flatter the model. The tool explains this where a backtest would otherwise be expected.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2><span class="num">04.</span>See real output</h2>
+    <p>
+      Below is an unedited report the tool generated. It is a static snapshot, kept exactly as
+      produced — the ratings and prices are those of the date shown, not current values.
+    </p>
+    <a class="cta" href="sample-aapl.html">Open the sample report →</a>
+    <div class="notice">
+      <b>Snapshot dated 4 August 2026 · not investment advice</b>
+      <p>
+        This is a personal engineering project and a point-in-time illustration of its output.
+        It is not a recommendation to buy or sell anything, it is not maintained as a live
+        service, and the figures shown will not reflect current market conditions. The tool
+        itself runs locally against free data sources; nothing here is a hosted product.
+      </p>
+    </div>
+  </section>
+
+  <footer>
+    <div>Peter Lau · <a href="/">lauyiucheung.com</a></div>
+  </footer>
+
+</div>
+</body>
+</html>

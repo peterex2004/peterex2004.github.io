@@ -1,0 +1,221 @@
+<!doctype html><html lang='zh-Hans'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>AAPL research report</title><style>
+:root{color-scheme:light;--ink:#172033;--muted:#637083;--line:#dfe5ec;--panel:#fff;--canvas:#f4f7fb;--blue:#2167d5;--green:#1a7f37;--green2:#2da44e;--olive:#7cb342;--gold:#d4a72c;--orange:#e8873a;--red:#cf222e;--grey:#98a2b3}
+*{box-sizing:border-box}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",Helvetica,Arial,sans-serif;line-height:1.5}
+.dashboard{max-width:1240px;margin:0 auto;padding:24px 22px 56px}
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;border-bottom:1px solid var(--line);padding:4px 0 18px}
+.eyebrow{color:var(--blue);font-size:.76rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.identity h1{font-size:2.1rem;line-height:1.1;margin:5px 0 3px;border:0;padding:0}
+.identity h1 span{color:var(--muted);font-size:1rem;font-weight:500;margin-left:8px}
+.identity p,.freshness{color:var(--muted);margin:0;font-size:.9rem}
+.price-block{text-align:right;white-space:nowrap}.price{font-size:1.65rem;font-weight:800}.price-block small{display:block;color:var(--muted);font-size:.78rem}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 7px rgba(24,39,75,.04);padding:22px;margin-top:18px}
+.panel h2{font-size:1.03rem;margin:0 0 16px;border:0;padding:0}.panel h2 small{color:var(--muted);font-size:.78rem;font-weight:500;margin-left:7px}
+.hero{display:grid;grid-template-columns:minmax(245px,1fr) minmax(260px,1.2fr) minmax(210px,.8fr);align-items:center;gap:24px}
+.hero-verdict{display:flex;align-items:center;gap:14px}.verdict-badge{border-radius:12px;color:#fff;display:inline-flex;flex-direction:column;justify-content:center;min-width:142px;min-height:86px;padding:11px 16px}.verdict-badge strong{font-size:1.25rem;line-height:1.15}.verdict-badge span{font-size:.73rem;opacity:.9;margin-top:4px}.verdict-strong-buy{background:#116329}.verdict-buy{background:#1a7f37}.verdict-hold{background:#b58105}.verdict-sell{background:#d05a26}.verdict-strong-sell{background:#a40e1f}.verdict-unavailable{background:#667085}
+.score-number{font-size:1.75rem;font-weight:800}.score-number small{font-size:.85rem;color:var(--muted);font-weight:600}.scale{margin-top:8px}.scale-track{height:9px;border-radius:99px;background:linear-gradient(90deg,#cf222e 0 25%,#e8873a 25% 42%,#d4a72c 42% 58%,#7cb342 58% 75%,#1a7f37 75%);position:relative}.scale-track:after{content:"";position:absolute;top:-4px;bottom:-4px;width:3px;background:var(--ink);border-radius:3px;left:var(--score-position)}.scale-labels{display:flex;justify-content:space-between;color:var(--muted);font-size:.7rem;margin-top:5px}
+.confidence{border-left:3px solid #d4a72c;padding-left:13px}.chip{display:inline-block;border-radius:99px;background:#fff4cc;color:#765800;border:1px solid #f0d778;font-size:.82rem;font-weight:800;padding:4px 10px}.confidence p{margin:8px 0 0;color:var(--muted);font-size:.82rem}
+.comparison{color:var(--muted);font-size:.78rem;margin:-5px 0 14px}.comparison strong{color:var(--ink)}
+.factor-row{display:grid;grid-template-columns:170px 62px minmax(140px,1fr) minmax(260px,1.3fr);align-items:center;gap:14px;padding:11px 0;border-top:1px solid #edf0f4}.factor-row:first-of-type{border-top:0}.factor-name{font-weight:750}.factor-name span{display:block;color:var(--muted);font-size:.73rem;font-weight:500}.grade-box{width:48px;height:42px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:white;font-weight:850;font-size:1.08rem}.green-strong{background:var(--green)}.green{background:var(--green2)}.olive{background:var(--olive)}.gold{background:var(--gold)}.orange{background:var(--orange)}.red{background:var(--red)}.muted{background:var(--grey)}.strength-head{display:flex;justify-content:space-between;color:var(--muted);font-size:.72rem;margin-bottom:5px}.strength-track{height:8px;background:#edf0f4;border-radius:99px;overflow:hidden}.strength-fill{height:100%;border-radius:99px}.factor-reading{font-size:.83rem}.factor-reading em{display:block;color:var(--muted);font-style:normal;font-size:.72rem;margin-top:2px}
+.gauge-summary{display:flex;justify-content:space-between;gap:16px;align-items:baseline}.gauge-summary strong{font-size:1.15rem}.overshoot{color:var(--red);font-weight:800;font-size:.86rem}.gauge{position:relative;margin:36px 5px 4px}.gauge-track{height:14px;background:#e9edf3;border-radius:99px;position:relative}.gauge-range{position:absolute;height:100%;left:var(--range-left);width:var(--range-width);background:linear-gradient(90deg,#cde5d2,#82bd8d);border-radius:99px}.gauge-point,.gauge-current{position:absolute;top:50%;width:3px;height:27px;transform:translate(-50%,-50%);border-radius:3px}.gauge-point{background:#166534}.gauge-current{background:var(--red);width:4px;height:35px}.gauge-label{position:absolute;top:-30px;transform:translateX(-50%);text-align:center;white-space:nowrap;font-size:.74rem}.gauge-label small{display:block;color:var(--muted);font-size:.67rem}.gauge-current-label{color:var(--red);font-weight:800}.gauge-endpoints{display:flex;justify-content:space-between;margin-top:18px;color:var(--muted);font-size:.77rem}.gauge-key{display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:.74rem;margin-top:12px}.gauge-key b{color:var(--ink)}
+.trend-strip{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;gap:12px}.trend-item{border-left:3px solid var(--blue);padding-left:12px}.trend-item small{display:block;color:var(--muted);font-size:.72rem}.trend-item strong{font-size:.95rem}.trend-badge{display:inline-block;border-radius:99px;background:#eef4ff;color:#1858b9;padding:4px 10px;font-size:.83rem;font-weight:800}
+.summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.summary-posture{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:13px}.posture{border:1px solid #cfd8e6;border-radius:8px;padding:7px 11px;background:#f8fafc;font-size:.8rem}.posture b{display:block;font-size:.7rem;color:var(--muted);font-weight:600}.consistency{border-radius:8px;background:#fff7e0;color:#735400;border:1px solid #efd37d;padding:9px 12px;font-weight:800;font-size:.84rem;margin-bottom:12px}.summary-copy{font-size:.88rem;margin:9px 0}.summary-copy strong{font-weight:800}.trigger{border-left:3px solid var(--blue);background:#f0f6ff;padding:10px 12px;font-size:.84rem;margin-top:13px}.summary-meta{border-top:1px solid var(--line);margin-top:15px;padding-top:12px;color:var(--muted);font-size:.78rem}
+.prose{max-width:1240px;margin:0 auto;padding:0 22px 56px}.prose h1{font-size:1.6rem;border-bottom:2px solid #333;padding-bottom:.3rem}.prose h2{font-size:1.2rem;margin-top:2rem;border-bottom:1px solid #ccc;padding-bottom:.2rem}.prose table{border-collapse:collapse;width:100%;margin:.5rem 0;table-layout:fixed}.prose th,.prose td{border:1px solid #ccc;padding:.5rem;vertical-align:top;width:50%}.prose th{background:#f2f2f2;text-align:left}.prose pre{white-space:pre-wrap;word-wrap:break-word;margin:0;font-family:inherit;font-size:.9rem}.prose p{margin:.5rem 0}
+@media(max-width:900px){.hero{grid-template-columns:1fr 1fr}.confidence{grid-column:1/-1}.trend-strip{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.dashboard{padding:16px 12px 36px}.topbar{align-items:flex-start;flex-direction:column}.price-block{text-align:left}.hero,.summary-grid{grid-template-columns:1fr}.factor-row{grid-template-columns:1fr 55px;gap:9px}.factor-row .strength{grid-column:1/-1}.factor-row .factor-reading{grid-column:1/-1}.trend-strip{grid-template-columns:1fr 1fr}.prose{padding:0 12px 36px}.prose th,.prose td{display:block;width:auto}.gauge{margin-left:0;margin-right:0}.gauge-label{font-size:.65rem}}
+</style></head><body>
+<main class='dashboard'>
+  <header class='topbar'><div class='identity'><div class='eyebrow'>Deterministic equity research / 确定性股票研究</div><h1>AAPL <span>Apple Inc.</span></h1><p>NMS · 中文优先 dashboard</p></div><div class='price-block'><div class='price'>303.42 美元</div><small>当前价格 / Current price · 2026-08-03</small><div class='freshness'>数据截至 / Data as of 2026-08-04T01:28:33+00:00</div></div></header>
+  <section class='panel hero'><div class='hero-verdict'><div class='verdict-badge verdict-hold'><strong>持有（HOLD）</strong><span>HOLD</span></div><div><div class='score-number'>3.33 <small>/ 5.0</small></div><div class='scale'><div class='scale-track' style='--score-position:58.35%'></div><div class='scale-labels'><span>1 Strong Sell</span><span>3 Hold</span><span>5 Strong Buy</span></div></div></div></div><div class='confidence'><span class='chip'>置信度 中</span><p>可用因子5/5；估值方法分散度77.7%。</p></div><div><div class='eyebrow'>Verdict / 判断</div><p class='summary-copy'>综合评级 / Composite: <strong>HOLD</strong><br>分数 / Score: <strong>3.33/5.0</strong></p></div></section>
+  <section class='panel'><h2>因子评级 <small>Factor grades</small></h2><p class='comparison'><strong>对比基准：自身五年历史</strong> · Comparison basis: own five-year history</p><div class='factor-row'><div class='factor-name'>估值<span>Valuation</span></div><div class='grade-box red' aria-label='F'>F</div><div class='strength'><div class='strength-head'><span>0–100</span><strong>10.4</strong></div><div class='strength-track'><div class='strength-fill red' style='width:10.35%'></div></div></div><div class='factor-reading'>与自身五年历史相比，市销率、市净率、EV/EBITDA等倍数分别位于第 100、100、100 百分位；其中市销率、市净率、EV/EBITDA处于五年来最贵水平。<em>Against its own five-year history, P/S, P/B, EV/EBITDA sit at the 100th, 100th, 100th percentiles; P/S, P/B, EV/EBITDA are at their most expensive in five years.</em></div></div><div class='factor-row'><div class='factor-name'>成长性<span>Growth</span></div><div class='grade-box gold' aria-label='C+'>C+</div><div class='strength'><div class='strength-head'><span>0–100</span><strong>57.0</strong></div><div class='strength-track'><div class='strength-fill gold' style='width:56.98%'></div></div></div><div class='factor-reading'>收入同比6.4%，三年收入年均增长1.8%。<em>Revenue is up 6.4% year on year; three-year CAGR is 1.8%.</em></div></div><div class='factor-row'><div class='factor-name'>盈利能力<span>Profitability</span></div><div class='grade-box green-strong' aria-label='A+'>A+</div><div class='strength'><div class='strength-head'><span>0–100</span><strong>99.2</strong></div><div class='strength-track'><div class='strength-fill green-strong' style='width:99.15%'></div></div></div><div class='factor-reading'>净利率27.6%，ROIC133.8%，自由现金流利润率29.3%。<em>Net margin 27.6%, ROIC 133.8%, FCF margin 29.3%.</em></div></div><div class='factor-row'><div class='factor-name'>动量<span>Momentum</span></div><div class='grade-box olive' aria-label='B'>B</div><div class='strength'><div class='strength-head'><span>0–100</span><strong>65.7</strong></div><div class='strength-track'><div class='strength-fill olive' style='width:65.69%'></div></div></div><div class='factor-reading'>趋势为横盘（SIDEWAYS），12个月回报率46.8%；收盘价低于SMA50，短期偏软。<em>Trend is SIDEWAYS; 12-month return is 46.8% and close is below SMA50, a soft short-term signal.</em></div></div><div class='factor-row'><div class='factor-name'>盈利预测修正<span>Revisions</span></div><div class='grade-box olive' aria-label='B-'>B-</div><div class='strength'><div class='strength-head'><span>0–100</span><strong>64.4</strong></div><div class='strength-track'><div class='strength-fill olive' style='width:64.42%'></div></div></div><div class='factor-reading'>修正广度0.944，预测方向-0.2%。<em>Revision breadth is 0.944 and estimate direction is -0.2%.</em></div></div></section>
+  <section class='panel'><h2>公允价值区间 <small>Fair-value gauge</small></h2><div class='gauge' style='--range-left:0.00%;--range-width:84.66%'><div class='gauge-track'><span class='gauge-range'></span><span class='gauge-point' style='left:67.77%'></span><span class='gauge-current' style='left:100.00%'></span><span class='gauge-label' style='left:0.00%'>88.41 美元<small>低位 / Low</small></span><span class='gauge-label' style='left:67.77%'>234.13 美元<small>中枢 / Point</small></span><span class='gauge-label' style='left:84.66%'>270.45 美元<small>高位 / High</small></span><span class='gauge-label gauge-current-label' style='left:100.00%'>303.42 美元<small>当前 / Current</small></span></div></div><div class='gauge-endpoints'><span>88.41 美元</span><span>270.45 美元</span></div><div class='gauge-key'><span>当前价格 / Current <b>高于合理区间上限 12%</b></span><span>估值方法 / Methods: DCF, P/E, P/S, P/B, EV/EBITDA, P/FCF</span></div></section>
+  <section class='panel'><h2>技术趋势 <small>Trend strip</small></h2><div class='trend-strip'><div class='trend-item'><small>趋势 / Regime</small><span class='trend-badge'>横盘（SIDEWAYS）</span></div><div class='trend-item'><small>强度 / Strength</small><strong>强（strong）</strong></div><div class='trend-item'><small>起始 / Since</small><strong>2026-07-31</strong></div><div class='trend-item'><small>收盘 / SMA50 / SMA200</small><strong>303.42 美元 / 309.52 美元 / 277.94 美元</strong></div><div class='trend-item'><small>宏观 / Macro</small><span class='trend-badge'>NEUTRAL</span></div></div></section>
+  <section class='panel'><h2>综合判断 <small>Combined summary · deterministic rule table</small></h2><div class='summary-grid'><div><div class='summary-posture'><div class='posture'><b>基本面姿态 / Fundamental posture</b>优质高估</div><div class='posture'><b>技术面姿态 / Technical posture</b>走弱</div></div><div class='consistency'>一致性 / Consistency: 两方面同向 · agree</div><p class='summary-copy'>好公司，贵价格，且短期动能正在减弱。基本面质量优秀（盈利能力 A+），但估值处于自身五年最贵区间，股价也已跌破 50 日均线。当前更适合持有观望而非加仓；等待估值回归或增长重新加速。<br><span class='muted-copy'>A good company at an expensive price is seeing short-term momentum weaken. Fundamental quality is excellent, but valuation is at its most expensive five-year range and price has broken below the 50-day moving average. Hold and observe rather than add; wait for valuation to normalise or growth to reaccelerate.</span></p><p class='summary-copy'>质量分数为78.1（成长性C+、盈利能力A+），估值分数为10.4。<br><span class='muted-copy'>Quality is 78.1 (Growth C+, Profitability A+); Valuation is 10.4.</span><br>技术姿态为走弱，动量分数65.7；趋势为横盘（SIDEWAYS）。收盘价低于SMA50，短期技术面偏软。<br><span class='muted-copy'>Technical posture is 走弱 with momentum 65.7; regime is SIDEWAYS. The close is below SMA50, a soft short-term signal.</span></p></div><div><p class='summary-copy'>置信度为中；公允价值方法分散度为77.7%；被排除因子：无。<br><span class='muted-copy'>Confidence is medium; fair-value dispersion is 77.7%; excluded factor(s): none.</span></p><div class='trigger'>改变当前判断的触发条件：股价回落至公允价值区间上限 270.45 美元 以下；或收盘重新站上SMA50（309.52 美元）。<br><span class='muted-copy'>What would change this view: price falls below the fair-value high $270.45 or the close retakes SMA50 ($309.52).</span></div></div></div></section>
+</main>
+<section class='prose'><h1>AAPL 双语研究报告 / Bilingual research report</h1><h2>快照 / Snapshot</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>快照
+
+持有（HOLD）是一个偏谨慎的判断：最新价格为303.42 美元，而公允价值中枢为234.13 美元。
+
+评级为持有（HOLD），分数 3.33/5.0，置信度中。因子等级为估值 F、成长性 C+、盈利能力 A+、动量 B、盈利预测修正 B-。公允价值中枢为234.13 美元，最新价格为303.42 美元，相对估值变化为-22.84%。技术趋势为横盘（SIDEWAYS）。宏观叠加：NEUTRAL（VIX + FRED）。
+数据日期：价格 2026-08-03，基本面 2026-08-04T01:28:33+00:00，最新财务期间 2025-09-30。</pre></td><td><pre>Snapshot
+
+HOLD is a cautious call: the latest price is $303.42 against a fair-value midpoint of $234.13.
+
+The rating is HOLD at 3.33/5.0 with medium confidence. The factor grades are Valuation F, Growth C+, Profitability A+, Momentum B, Revisions B-. Fair value is $234.13 versus a latest price of $303.42, or -22.84% relative to the estimate. The technical regime is SIDEWAYS. Macro overlay: NEUTRAL（VIX + FRED）.
+Data dates: price 2026-08-03, fundamentals 2026-08-04T01:28:33+00:00, latest fiscal period 2025-09-30.</pre></td></tr></table><h2>执行摘要 / Executive summary</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>执行摘要
+
+公司可能非常优秀，但当前价格留下的容错空间很小：最新价格为303.42 美元，公允价值中枢为234.13 美元。
+
+估值 F、成长性 C+、盈利能力 A+、动量 B、盈利预测修正 B-支持当前评级。核心矛盾在于公司经营质量与投资者支付的价格之间：公允价值中枢为234.13 美元，最新价格为303.42 美元（-22.84%）。没有因子被排除。</pre></td><td><pre>Executive summary
+
+The company may be excellent, but the current price leaves little room for error: it is $303.42 versus $234.13 fair value.
+
+HOLD is supported by Valuation F, Growth C+, Profitability A+, Momentum B, Revisions B-. The main tension is between the company&#x27;s operating quality and the price investors are paying for it: fair value is $234.13 while the latest price is $303.42 (-22.84%). No factors were excluded.</pre></td></tr></table><h2>公司概况 / Company overview</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>公司概况
+
+这是Apple Inc.；数据源未提供市值或员工数的部分仍明确标记为不可用。
+
+公司 Apple Inc.（AAPL）在 纳斯达克（NMS） 上市，所属行业/板块为 科技（Technology） / 消费电子（Consumer Electronics）。市值为 4.46 万亿美元，员工数为 150,000。数据源简介：公司简介保留数据源原文，中文栏不进行自动翻译；原文数字：2007、1976。
+公司资料时间戳：2026-08-04T01:28:27+00:00。</pre></td><td><pre>Company overview
+
+This is Apple Inc.; profile completeness is limited where the source has not supplied market or employee data.
+
+Apple Inc. (AAPL) is listed on NMS in Technology / Consumer Electronics. Market capitalisation is $4.46T and employees are 150,000. Source description: Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The company offers iPhone, a line of smartphones; Mac, a line of personal computers; iPad, a line of multi-purpose tablets; and wearables, home, and accessories comprising AirPods, Apple Vision Pro, Apple TV, Apple Watch, Beats products, and HomePod, as well as Apple branded and third-party accessories. It also provides AppleCare support and cloud services; and operates various platforms, including the App Store that allows customers to discover and download applications and digital content, such as books, music, video, games, and podcasts, as well as advertising services include third-party licensing arrangements and its own advertising platforms. In addition, the company offers various subscription-based services, such as Apple Arcade, a game subscription service; Apple Fitness+, a personalized fitness service; Apple Music, which offers users a curated listening experience with on-demand radio stations; Apple News+, a subscription news and magazine service; Apple TV, which offers original content and live sports; Apple Card, a co-branded credit card; and Apple Pay, a cashless payment service, as well as licenses its intellectual property. The company serves consumers, and small and mid-sized businesses; and the education, enterprise, and government markets. It distributes third-party applications for its products through the App Store. The company also sells its products through its retail and online stores, and direct sales force; and third-party cellular network carriers and resellers. The company was formerly known as Apple Computer, Inc. and changed its name to Apple Inc. in January 2007. Apple Inc. was founded in 1976 and is headquartered in Cupertino, California..
+Profile timestamp: 2026-08-04T01:28:27+00:00.</pre></td></tr></table><h2>基本面分析 / Fundamental analysis</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>基本面分析
+
+基本面核心结论是：盈利能力可观，但必须把增长放缓与估值压力放在一起看。
+
+最近可用期间收入为4,668 亿美元，同比增长6.4%。拉长到三年，收入年均变化为1.8%，自由现金流年均变化为-3.9%。
+
+盈利质量由净利率27.6%、ROIC133.8%和自由现金流利润率29.3%体现。ROIC意味着每投入一元资本，约产生1.34元税后经营利润。
+
+估值是主要压力点：市盈率为34.6倍，市销率为9.5倍，市净率为60.4倍，EV/EBITDA为26.7倍。与自身五年历史相比，市销率、市净率、EV/EBITDA等倍数分别位于第 100、100、100 百分位；其中市销率、市净率、EV/EBITDA处于五年来最贵水平。
+
+DCF在9.33%折现率和2.50%终值增长率假设下给出每股88.41 美元的公允价值。终值现值占企业价值71.70%，因此长期假设对结果影响很大。
+
+下面的7×5敏感性表展示折现率和终值增长率同时变化时，每股DCF公允价值如何变化：
+| WACC\g | 1.50% | 2.00% | 2.50% | 3.00% | 3.50% |
+| --- | --- | --- | --- | --- | --- |
+| 7.83% | 98.77 | 105.49 | 113.47 | 123.10 | 134.95 |
+| 8.33% | 91.46 | 97.09 | 103.69 | 111.52 | 120.98 |
+| 8.83% | 85.14 | 89.92 | 95.45 | 101.92 | 109.62 |
+| 9.33% | 79.64 | 83.73 | 88.41 | 93.84 | 100.20 |
+| 9.83% | 74.79 | 78.32 | 82.34 | 86.94 | 92.27 |
+| 10.33% | 70.49 | 73.57 | 77.04 | 80.98 | 85.50 |
+| 10.83% | 66.65 | 69.35 | 72.37 | 75.78 | 79.65 |
+
+公允价值由 6 种方法交叉验证得出：DCF、P/E、P/S、P/B、EV/EBITDA、P/FCF。区间为88.41 美元至270.45 美元，分散度为0.78。
+
+质量分数仅作为支持性证据，不进入综合评级。Piotroski F-score（皮奥特罗斯基）为8/9项可测试标准（强）；标准：1 ROA &gt; 0=1（ROA=0.3118）；2 CFO &gt; 0=1（CFO=111,482）；3 ROA improved YoY=1（ROA=0.3118、prior_ROA=0.2568）；4 CFO &gt; net income=0（CFO=111,482、net_income=112,010）；5 total debt / assets fell YoY=1（debt_assets=0.2746、prior_debt_assets=0.2922）；6 current ratio improved YoY=1（current_ratio=0.8933、prior_current_ratio=0.8673）；7 no net new shares issued=1（diluted_shares=15,004,697,000、prior_diluted_shares=15,408,095,000）；8 gross margin improved YoY=1（gross_margin=0.4691、prior_gross_margin=0.4621）；9 asset turnover improved YoY=1（asset_turnover=1.1584、prior_asset_turnover=1.0714）；已排除：无。Altman Z为10.27（安全）；组成项为X1 -0.0492，X2 -0.0397，X3 0.3704，X4 13.3442，X5 1.1584。Altman Z源自1960年代制造业样本；对于市值较大、资产较轻的公司，X4可能显著抬高分数。因此Z=10并不表示其安全性是Z=3公司的三倍。盈利一致性为一致：EPS为正的年度4/4个可比年度（共5个年度，其中1个缺少EPS数据，已排除而非计为亏损），EPS同比上升2/3次，变异系数为0.091。</pre></td><td><pre>Fundamental analysis
+
+Operating quality is the central question: profitability is measurable, but the growth and valuation evidence must be read together.
+
+Revenue remains positive at $466.8B for the latest available period, up 6.4% year on year. Over three years, revenue has grown 1.8% annualised while FCF has changed -3.9%.
+
+Profitability is described by a net margin of 27.6%, ROIC of 133.8%, and FCF margin of 29.3%. ROIC means that each dollar of invested capital produces about 1.34 dollars of after-tax operating profit.
+
+Valuation is the main pressure point: P/E is 34.6 times, P/S is 9.5 times, P/B is 60.4 times, and EV/EBITDA is 26.7 times. Against its own five-year history, P/S, P/B, EV/EBITDA sit at the 100th, 100th, 100th percentiles; P/S, P/B, EV/EBITDA are at their most expensive in five years.
+
+DCF produces a fair value of $88.41 per share using a 9.33% discount rate and 2.50% terminal growth assumption. Terminal value represents 71.70% of enterprise value, so the result is especially sensitive to long-term assumptions.
+
+The following 7×5 sensitivity table shows how the per-share DCF value changes when the discount rate and terminal growth assumption move together:
+| WACC\g | 1.50% | 2.00% | 2.50% | 3.00% | 3.50% |
+| --- | --- | --- | --- | --- | --- |
+| 7.83% | 98.77 | 105.49 | 113.47 | 123.10 | 134.95 |
+| 8.33% | 91.46 | 97.09 | 103.69 | 111.52 | 120.98 |
+| 8.83% | 85.14 | 89.92 | 95.45 | 101.92 | 109.62 |
+| 9.33% | 79.64 | 83.73 | 88.41 | 93.84 | 100.20 |
+| 9.83% | 74.79 | 78.32 | 82.34 | 86.94 | 92.27 |
+| 10.33% | 70.49 | 73.57 | 77.04 | 80.98 | 85.50 |
+| 10.83% | 66.65 | 69.35 | 72.37 | 75.78 | 79.65 |
+
+The fair value triangulates 6 methods: DCF, P/E, P/S, P/B, EV/EBITDA, P/FCF. The range is $88.41 to $270.45, with a dispersion of 0.78.
+
+Quality scores are supporting evidence only and do not enter the rating. Piotroski F-score is 8/9 testable criteria (strong); criteria: 1 ROA &gt; 0=1 (ROA=0.3118); 2 CFO &gt; 0=1 (CFO=111,482); 3 ROA improved YoY=1 (ROA=0.3118, prior_ROA=0.2568); 4 CFO &gt; net income=0 (CFO=111,482, net_income=112,010); 5 total debt / assets fell YoY=1 (debt_assets=0.2746, prior_debt_assets=0.2922); 6 current ratio improved YoY=1 (current_ratio=0.8933, prior_current_ratio=0.8673); 7 no net new shares issued=1 (diluted_shares=15,004,697,000, prior_diluted_shares=15,408,095,000); 8 gross margin improved YoY=1 (gross_margin=0.4691, prior_gross_margin=0.4621); 9 asset turnover improved YoY=1 (asset_turnover=1.1584, prior_asset_turnover=1.0714); excluded: none. Altman Z is 10.27 (safe); components X1 -0.0492, X2 -0.0397, X3 0.3704, X4 13.3442, X5 1.1584. Altman Z was calibrated on 1960s manufacturers; it can be inflated for asset-light companies with large market caps because X4 dominates. Therefore Z=10 does not mean the company is three times safer than a company at Z=3. Earnings consistency is consistent: positive EPS years 4/4 testable (of 5 annual periods; 1 lacking EPS data and excluded, not counted as losses), EPS increases 2/3 comparisons, coefficient of variation 0.091.</pre></td></tr></table><h2>技术面分析 / Technical analysis</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>技术面分析
+
+技术面显示横盘（SIDEWAYS）：当前价格为303.42 美元，低于10.8%52周高点，趋势起始于2026-07-31。
+
+最新价格为303.42 美元。3个月、6个月和12个月回报率分别为8.4%、17.2%和46.8%；当前价格低于10.8%52周高点。相对SPY回报率3个月 3.00%、6个月 7.07%、12个月 25.56%。
+趋势证据：4项中的8项趋势条件通过。
+
+最近支撑位：302.42（-0.33%）；最近阻力位：318.38（4.93%）。52周高点/低点：344.57 / 201.50。整数关口：300.00。摆动转折价位使用252个观测值；下表为1.5%以内聚类结果，并在可用时报告成交量节点占比。
+
+| 价位 | 类型 | 强度 | 距离 % | 成交量占比 |
+|---:|---|---:|---:|---:|
+| 277.54 | 支撑 | 9.5 | -8.53% | 11.26% |
+| 244.05 | 支撑 | 6.5 | -19.57% | 3.71% |
+| 256.85 | 支撑 | 5.5 | -15.35% | 15.88% |
+| 265.78 | 支撑 | 4.0 | -12.41% | 10.42% |
+| 224.86 | 支撑 | 2.5 | -25.89% | 2.27% |
+
+说明：无。</pre></td><td><pre>Technical analysis
+
+Technical evidence is sideways: price is $303.42, the stock is 10.8% below its 52-week high, and the trend began on 2026-07-31.
+
+The latest price is $303.42. The 3-, 6-, and 12-month returns are 8.4%, 17.2%, and 46.8%. The stock is 10.8% below its 52-week high. Relative SPY returns are 3m 3.00%, 6m 7.07%, 12m 25.56%.
+Trend evidence: 4 of 8 trend conditions pass.
+
+Nearest support: 302.42 (-0.33%); nearest resistance: 318.38 (4.93%). 52-week high/low: 344.57 / 201.50. Round-number marker: 300.00. Swing-pivot levels use 252 observations; levels below are clustered within 1.5% and volume share is reported where available.
+
+| level | type | strength | distance % | volume share |
+|---:|---|---:|---:|---:|
+| 277.54 | support | 9.5 | -8.53% | 11.26% |
+| 244.05 | support | 6.5 | -19.57% | 3.71% |
+| 256.85 | support | 5.5 | -15.35% | 15.88% |
+| 265.78 | support | 4.0 | -12.41% | 10.42% |
+| 224.86 | support | 2.5 | -25.89% | 2.27% |
+
+Notes: none.</pre></td></tr></table><h2>宏观环境 / Macro context</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>宏观环境
+
+当前可用宏观证据为NEUTRAL；它只用于置信度背景，不会改写评级。
+
+宏观制度为NEUTRAL；依据：VIX 15.86 is between 15 and 25 (normal)；10Y-2Y curve is 0.45pp (45bp)；CPI YoY is 2.87%；UNRATE is 4.20%。FRED宏观输入可用。当前叠加：NEUTRAL（VIX + FRED）。宏观输入没有静默改变评级。</pre></td><td><pre>Macro context
+
+The available macro evidence is NEUTRAL; it is context for confidence and does not rewrite the rating.
+
+Macro regime is NEUTRAL; basis: VIX 15.86 is between 15 and 25 (normal); 10Y-2Y curve is 0.45pp (45bp); CPI YoY is 2.87%; UNRATE is 4.20%. FRED inputs are available. Overlay: NEUTRAL（VIX + FRED） No macro input silently changed the rating.</pre></td></tr></table><h2>市场情绪 / Sentiment</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>市场情绪
+
+新闻标题语气只是描述性证据；它由确定性规则计算，但在W4不进入评级。
+
+盈利预测修正因子为B-（64.42/100）：修正广度均值0.944，预测方向-0.19%，推荐漂移0.058。三项信号并不一致：修正广度偏正面，而推荐漂移偏负面，因此该评级反映的是分析师看法分歧，而非明确的方向。
+新闻语气：100条标题，窗口为2026-04-15至2026-08-03，平均语气0.030，正面/负面/中性为18/15/67；SA_FINNHUB_KEY缺失；Finnhub公司新闻标题和来源元数据不可用。设置SA_FINNHUB_KEY可增加Finnhub近期新闻流。最正面标题：Apple Stock Tests $310 Support: Can Record iPhone Sales and Margin Expansion Drive Growth? - Benzinga（2026-08-03）。最负面标题：Apple stock plunges: $300 support hangs by a thread after guidance miss (AAPL:NASDAQ) - Seeking Alpha（2026-07-31）。
+新闻语气只作为背景信息，W4明确不进入综合评级。</pre></td><td><pre>Sentiment
+
+Headline sentiment is descriptive evidence only; it is computed deterministically but does not enter the W4 rating.
+
+Revisions factor is B- (64.42/100): breadth average 0.944, estimate direction -0.19%, recommendation drift 0.058. These disagree: breadth point up while recommendation drift point down, so the grade reflects a genuinely mixed analyst picture rather than a clear signal.
+News tone: 100 headline(s) in 2026-04-15 to 2026-08-03, mean tone 0.030, positive/negative/neutral 18/15/67; SA_FINNHUB_KEY is missing; Finnhub company-news headlines and source metadata are unavailable. Set SA_FINNHUB_KEY to add the Finnhub recent-news feed. Most positive: Apple Stock Tests $310 Support: Can Record iPhone Sales and Margin Expansion Drive Growth? - Benzinga (2026-08-03). Most negative: Apple stock plunges: $300 support hangs by a thread after guidance miss (AAPL:NASDAQ) - Seeking Alpha (2026-07-31).
+News tone is computed for context only and is explicitly excluded from the rating in W4.</pre></td></tr></table><h2>风险与催化剂 / Risks &amp; catalysts</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>风险与催化剂
+
+主要风险是：估值假设承担的解释责任超过了现有证据能够稳妥支持的程度。
+
+风险：
+- DCF与倍数估值区间分散度较大：公允价值范围为88.41 美元至270.45 美元，中枢为234.13 美元，分散度77.7%。
+- 价格高于公允价值中枢，安全边际为-29.6%。
+- 自由现金流增长为负：三年年均变化为-3.9%。
+
+催化剂：
+- 最新收入仍在增长，同比增长6.4%。</pre></td><td><pre>Risks &amp; catalysts
+
+The main risk is that valuation assumptions are doing more work than the available evidence can firmly support.
+
+Risks:
+- DCF and multiples disagree materially: fair value spans $88.41 to $270.45 around a $234.13 midpoint, a 77.7% dispersion.
+- The price is above the fair-value midpoint, leaving a -29.6% margin of safety.
+- Free cash flow growth is negative: the three-year annualised change is -3.9%.
+
+Catalysts:
+- Latest revenue is still growing, up 6.4% year on year.</pre></td></tr></table><h2>评级依据与监控条件 / Rating rationale &amp; monitoring triggers</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>评级依据与监控条件
+
+综合评级为持有（HOLD），3.33/5.0，置信度中。因子等级为估值 F、成长性 C+、盈利能力 A+、动量 B、盈利预测修正 B-。换句话说，估值为F：与自身五年历史相比，市销率、市净率、EV/EBITDA等倍数分别位于第 100、100、100 百分位；其中市销率、市净率、EV/EBITDA处于五年来最贵水平。 成长性为C+：收入同比6.4%，三年收入年均增长1.8%，每股收益年均增长6.9%。 盈利能力为A+：净利率27.6%，ROIC133.8%，自由现金流利润率29.3%。 动量为B：股价处于横盘（SIDEWAYS），12个月回报率为46.8%。 盈利预测修正为B-：修正广度0.944，预测方向-0.2%，推荐漂移0.058。
+
+置信度为中，原因是可用因子为5/5（100.0%）；已评分子指标中有27/27项可用（100.0%）；不同公允价值方法的分散度为77.7%；最新财务期间距今307天。当不同方法存在分歧时，任何单一目标价都不应被视为精确结论。没有因子被排除。
+
+监控条件：
+- 若价格 &gt; $270.45，则下调至持有（HOLD）（公允价值高位）
+- 若自由现金流利润率 &lt; 24.28%（当前自由现金流利润率 29.28%），则投资逻辑失效
+- 若收盘价 &lt; SMA50 = $309.52，则趋势反转</pre></td><td><pre>Rating rationale &amp; monitoring triggers
+
+Overall rating: HOLD, 3.33/5.0, with medium confidence. The factor grades are Valuation F, Growth C+, Profitability A+, Momentum B, Revisions B-. In plain terms, Valuation is F: Against its own five-year history, P/S, P/B, EV/EBITDA sit at the 100th, 100th, 100th percentiles; P/S, P/B, EV/EBITDA are at their most expensive in five years. Growth is C+: revenue is up 6.4% year on year, with three-year revenue growth of 1.8% and EPS growth of 6.9% annualised. Profitability is A+: net margin is 27.6%, ROIC is 133.8%, and FCF margin is 29.3%. Momentum is B: the stock is in SIDEWAYS and the 12-month return is 46.8%. Revisions are B-: breadth is 0.944, estimate direction is -0.2%, and recommendation drift is 0.058.
+
+Confidence is medium because only 5 of 5 factors are available (100.0%), 27 of 27 scored sub-metrics are available (100.0%), fair-value methods show 77.7% dispersion, the latest fiscal period is 307 days old. No single target should be treated as precise when methods disagree. No factors were excluded.
+
+Monitoring triggers:
+- downgrade to HOLD if price &gt; $270.45 (fair-value high)
+- thesis breaks if FCF margin &lt; 24.28% (current FCF margin 29.28%)
+- trend flips if close &lt; SMA50 = $309.52</pre></td></tr></table><h2>附录 / Appendix</h2><table><tr><th>中文</th><th>English (reference) / 英文（参考）</th></tr><tr><td><pre>附录
+
+本附录记录数据来源、限制和确定性评分方法；它不是模型生成的第二个意见。
+
+数据来源和时间戳：公司资料 2026-08-04T01:28:27+00:00；价格 2026-08-03；基本面 2026-08-04T01:28:33+00:00；最新财务期间 2025-09-30。
+方法：因子值先按0–100分制计算，再依据固定区间转换为字母等级。缺失输入会被排除并点名，其余证据再合成为评级。增长率根据历史观测年化计算，利润率、回报率和估值指标则使用相应的财务或价格数据。
+已知限制：没有SA_FINNHUB_KEY时，新闻语气可能为空或使用公共RSS；SA_FRED_KEY缺失时，利率、曲线、CPI和失业率输入不可用；v1尚无行业百分位评级；免费价格数据可能延迟；DCF/倍数区间较宽时不会被表述为确定价值。
+警告与数据缺口： SA_FINNHUB_KEY 缺失; Finnhub company-news headlines and source metadata are 不可用. Set SA_FINNHUB_KEY to add the Finnhub recent-news feed.
+免责声明：本确定性研究输出仅供研究参考，不构成投资建议。</pre></td><td><pre>Appendix
+
+This appendix records provenance, limitations, and the deterministic scoring approach; it is not a second opinion generated by a model.
+
+Data sources and timestamps: profile 2026-08-04T01:28:27+00:00; prices 2026-08-03; fundamentals 2026-08-04T01:28:33+00:00; latest fiscal period 2025-09-30.
+Methodology: factor values are scored on a 0–100 scale and converted to letter grades using fixed bands. Missing inputs are excluded and named; available evidence is then combined into the rating. Growth rates are annualised from historical observations, while margins, returns, and valuation measures use their underlying financial or price data.
+Known limitations: headline-level news tone can be empty or fall back to public RSS without SA_FINNHUB_KEY; FRED rate, curve, CPI, and unemployment inputs require SA_FRED_KEY; sector-percentile grading is not implemented in v1; free price data may be delayed; a wide DCF/multiples range is not presented as settled value.
+Warnings and gaps: SA_FINNHUB_KEY is missing; Finnhub company-news headlines and source metadata are unavailable. Set SA_FINNHUB_KEY to add the Finnhub recent-news feed.
+Disclaimer: this deterministic research output is not investment advice.</pre></td></tr></table></section></body></html>
