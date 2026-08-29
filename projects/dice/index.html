@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dice Roller</title>
+<style>
+  :root {
+    --bg: #f4f1ea;
+    --panel: #ffffff;
+    --ink: #23201c;
+    --muted: #7b746a;
+    --pip: #23201c;
+    --accent: #b6462f;
+    --shadow: rgba(35, 32, 28, .18);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #17161a;
+      --panel: #f6f4f0;
+      --ink: #efece6;
+      --muted: #9a938a;
+      --accent: #e0674c;
+      --shadow: rgba(0, 0, 0, .5);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2rem;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  h1 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .tray {
+    display: flex;
+    gap: 1.25rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .die {
+    width: 96px;
+    height: 96px;
+    background: var(--panel);
+    border-radius: 18px;
+    box-shadow: 0 10px 20px -8px var(--shadow), inset 0 -3px 0 rgba(0,0,0,.06);
+    display: grid;
+    grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+    padding: 14px;
+    transition: transform .12s ease;
+  }
+  .die.rolling { animation: tumble .5s ease-in-out; }
+  @keyframes tumble {
+    0%   { transform: rotate(0)      translateY(0); }
+    25%  { transform: rotate(-18deg) translateY(-18px); }
+    50%  { transform: rotate(14deg)  translateY(0); }
+    75%  { transform: rotate(-8deg)  translateY(-8px); }
+    100% { transform: rotate(0)      translateY(0); }
+  }
+  .pip {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--pip);
+    align-self: center;
+    justify-self: center;
+  }
+  /* pip positions in the 3x3 grid */
+  .p-tl { grid-area: 1 / 1; } .p-tr { grid-area: 1 / 3; }
+  .p-ml { grid-area: 2 / 1; } .p-c  { grid-area: 2 / 2; }
+  .p-mr { grid-area: 2 / 3; }
+  .p-bl { grid-area: 3 / 1; } .p-br { grid-area: 3 / 3; }
+
+  .total {
+    font-size: 1rem;
+    color: var(--muted);
+    min-height: 1.4em;
+  }
+  .total b { color: var(--ink); font-size: 1.3rem; }
+  button {
+    font: inherit;
+    font-weight: 600;
+    letter-spacing: .05em;
+    padding: .8rem 2.4rem;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 8px 16px -6px var(--shadow);
+  }
+  button:hover { filter: brightness(1.07); }
+  button:active { transform: translateY(1px); }
+  button:disabled { opacity: .6; cursor: default; }
+  .hint { font-size: .8rem; color: var(--muted); }
+  .back {
+    position: fixed;
+    top: 1.25rem;
+    left: 1.5rem;
+    font-size: .85rem;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .back:hover { color: var(--accent); }
+</style>
+</head>
+<body>
+  <a class="back" href="/projects/">&larr; Back to Projects</a>
+  <h1>Dice Roller</h1>
+  <div class="tray" id="tray"></div>
+  <div class="total" id="total">Press Roll to start</div>
+  <button id="roll">Roll</button>
+  <p class="hint">Tip: press the spacebar to roll again</p>
+
+<script>
+  // Which of the 7 pip slots light up for each face value.
+  const FACES = {
+    1: ['p-c'],
+    2: ['p-tl', 'p-br'],
+    3: ['p-tl', 'p-c', 'p-br'],
+    4: ['p-tl', 'p-tr', 'p-bl', 'p-br'],
+    5: ['p-tl', 'p-tr', 'p-c', 'p-bl', 'p-br'],
+    6: ['p-tl', 'p-tr', 'p-ml', 'p-mr', 'p-bl', 'p-br'],
+  };
+
+  const tray = document.getElementById('tray');
+  const totalEl = document.getElementById('total');
+  const rollBtn = document.getElementById('roll');
+
+  const dice = [0, 1, 2].map(() => {
+    const el = document.createElement('div');
+    el.className = 'die';
+    tray.appendChild(el);
+    return el;
+  });
+
+  function draw(el, value) {
+    el.innerHTML = '';
+    el.setAttribute('aria-label', value + '');
+    for (const slot of FACES[value]) {
+      const pip = document.createElement('span');
+      pip.className = 'pip ' + slot;
+      el.appendChild(pip);
+    }
+  }
+
+  function d6() {
+    return Math.floor(Math.random() * 6) + 1;
+  }
+
+  let rolling = false;
+  function roll() {
+    if (rolling) return;
+    rolling = true;
+    rollBtn.disabled = true;
+    dice.forEach(el => { el.classList.remove('rolling'); void el.offsetWidth; el.classList.add('rolling'); });
+
+    // shuffle the faces while the dice tumble
+    const shuffle = setInterval(() => dice.forEach(el => draw(el, d6())), 70);
+
+    setTimeout(() => {
+      clearInterval(shuffle);
+      const values = dice.map(el => { const v = d6(); draw(el, v); return v; });
+      totalEl.innerHTML = 'Total <b>' + values.reduce((a, b) => a + b, 0) + '</b> &nbsp;(' + values.join(' + ') + ')';
+      rolling = false;
+      rollBtn.disabled = false;
+    }, 500);
+  }
+
+  rollBtn.addEventListener('click', roll);
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space' || e.code === 'Enter') { e.preventDefault(); roll(); }
+  });
+
+  dice.forEach(el => draw(el, d6()));
+</script>
+</body>
+</html>
