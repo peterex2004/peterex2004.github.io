@@ -1,0 +1,2518 @@
+<!doctype html>
+<html lang="zh-HK">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- iOS 加到主畫面之後就冇 Safari 個工具列，似真 app -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="雀數">
+<!-- iOS 唔認 SVG 做主畫面 icon，一定要 PNG -->
+<link rel="apple-touch-icon" href="icon-180.png">
+<!-- 未公開：唔想 Google 索引到。想公開嗰陣刪咗呢行。 -->
+<meta name="robots" content="noindex, nofollow">
+<title>雀數 · 打麻雀記分</title>
+<meta name="theme-color" content="#12483A">
+<!-- 淨係喺 server 上面行嗰陣先用得着；double-click 開個檔案本身已經離線 -->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<style>
+:root {
+  --bg:        #E9EDE6;
+  --felt:      #12483A;
+  --felt-deep: #0C3529;
+  --tile:      #FBF9F3;
+  --tile-edge: #DAD5C6;
+  --tile-ink:  #1A2420;
+  --surface:   #FFFFFF;
+  --surface-2: #EFF2EC;
+  --ink:       #16211C;
+  --muted:     #64756C;
+  --accent:    #14624E;
+  --gold:      #B08A2E;
+  --red:       #A5382B;
+  --rule:      #D6DDD3;
+  --shadow:    rgba(16, 30, 24, .16);
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:        #0A120F;
+    --felt:      #10382C;
+    --felt-deep: #08241C;
+    --tile:      #EDEAE0;
+    --tile-edge: #B9B4A4;
+    --tile-ink:  #17201C;
+    --surface:   #141F1A;
+    --surface-2: #1B2822;
+    --ink:       #E7EEE9;
+    --muted:     #8CA298;
+    --accent:    #4FBB9A;
+    --gold:      #D9B45A;
+    --red:       #E2796C;
+    --rule:      #24332D;
+    --shadow:    rgba(0, 0, 0, .55);
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html {
+  height: 100%;
+  /* 手機轉橫掂唔好自己放大字 */
+  -webkit-text-size-adjust: 100%;
+  /* 唔好落拉刷新／唔好彈彈吓——打牌打到一半 reload 就大鑊 */
+  overscroll-behavior: none;
+}
+body {
+  /* 100vh 喺 iOS Safari 會計埋工具列，撞到個底。
+     svh = 工具列出晒嗰陣嘅高度，所以永遠唔會被遮，亦唔會跟住工具列跳。 */
+  height: 100vh;
+  height: 100svh;
+  overscroll-behavior: none;
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Segoe UI", system-ui, sans-serif;
+  display: flex;
+  flex-direction: column;
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+}
+button { font: inherit; cursor: pointer; color: inherit; }
+button:active:not(:disabled) { transform: translateY(1px); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ══ header：局面做主角 ══ */
+header {
+  display: flex;
+  align-items: center;
+  gap: .7rem;
+  /* 瀏海／動態島底下唔可以擺嘢 */
+  padding: calc(.75rem + env(safe-area-inset-top)) calc(.95rem + env(safe-area-inset-right))
+           .6rem calc(.95rem + env(safe-area-inset-left));
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+.round-block { flex: 1; min-width: 0; }
+.round-label {
+  font-family: "Songti TC", "Noto Serif TC", serif;
+  font-size: 1.32rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: .02em;
+}
+.round-sub {
+  font-size: .69rem;
+  color: var(--muted);
+  margin-top: .12rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.streak-pill {
+  display: inline-block;
+  background: var(--gold);
+  color: #fff;
+  font-size: .62rem;
+  font-weight: 600;
+  padding: .06rem .34rem;
+  border-radius: 3px;
+  margin-left: .35rem;
+  vertical-align: 2px;
+}
+.streak-pill[hidden] { display: none !important; }
+.icons { display: flex; gap: .3rem; flex-shrink: 0; }
+.icon-btn {
+  /* Apple HIG：可撳嘅嘢最細 44×44 */
+  width: 2.75rem; height: 2.75rem;
+  border: 1px solid var(--rule);
+  background: var(--surface-2);
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  font-size: .96rem;
+}
+.icon-btn:disabled { opacity: .33; }
+
+/* ══ 檯面 ══ */
+main {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  padding: .5rem calc(.7rem + env(safe-area-inset-right)) .5rem calc(.7rem + env(safe-area-inset-left));
+  min-height: 0;
+}
+.felt {
+  width: min(100%, 30rem, 100%);
+  aspect-ratio: 1;
+  max-height: 100%;
+  background: radial-gradient(ellipse at 50% 42%, var(--felt) 0%, var(--felt-deep) 100%);
+  border-radius: 22px;
+  padding: 3.5%;
+  display: grid;
+  grid-template-columns: 1fr 1.1fr 1fr;
+  grid-template-rows: 1fr 1.1fr 1fr;
+  gap: 2.5%;
+  box-shadow: 0 14px 34px -14px var(--shadow), inset 0 0 0 1px rgba(255,255,255,.05);
+}
+
+/* 座位卡 = 一隻牌 */
+.seat {
+  position: relative;
+  border: none;
+  border-radius: 9px;
+  padding: .3rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .05rem;
+  min-width: 0;
+  background: linear-gradient(#FFFFFF 0%, var(--tile) 42%, var(--tile-edge) 100%);
+  color: var(--tile-ink);
+  box-shadow:
+    0 2px 0 0 rgba(0,0,0,.16),
+    0 4px 9px -3px rgba(0,0,0,.34),
+    inset 0 1px 0 rgba(255,255,255,.9);
+}
+.seat.dealer {
+  box-shadow: 0 2px 0 0 rgba(0,0,0,.16), 0 4px 9px -3px rgba(0,0,0,.34),
+              inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 2.5px var(--accent);
+}
+.seat.lands {
+  box-shadow: 0 2px 0 0 rgba(0,0,0,.16), 0 4px 9px -3px rgba(0,0,0,.34),
+              inset 0 1px 0 rgba(255,255,255,.9), 0 0 0 2.5px var(--gold);
+}
+.seat .wind {
+  font-family: "Songti TC", "Noto Serif TC", serif;
+  font-size: clamp(1.1rem, 5.2vw, 1.7rem);
+  line-height: 1;
+  color: var(--accent);
+  text-shadow: 0 1px 0 rgba(255,255,255,.8);
+}
+.seat .nm {
+  font-size: clamp(.68rem, 2.9vw, .84rem);
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: .82;
+}
+.seat .amt {
+  font-size: clamp(.92rem, 4.3vw, 1.32rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+.pos { color: var(--accent); }
+.neg { color: var(--red); }
+.zero { color: var(--muted); }
+.seat .tag {
+  position: absolute;
+  top: .25rem; left: .3rem;
+  font-size: .55rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+  padding: .04rem .26rem;
+  border-radius: 3px;
+  background: var(--accent);
+  color: #fff;
+}
+.seat .lead { position: absolute; top: .2rem; right: .3rem; font-size: .7rem; line-height: 1; }
+
+/* 座位：0=下 1=右 2=上 3=左（逆時針） */
+#seat0 { grid-area: 3 / 2; }
+#seat1 { grid-area: 2 / 3; }
+#seat2 { grid-area: 1 / 2; }
+#seat3 { grid-area: 2 / 1; }
+
+.center {
+  grid-area: 2 / 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: .3rem;
+  min-width: 0;
+}
+.dice { display: flex; gap: .22rem; align-items: center; justify-content: center; flex-wrap: wrap; }
+.dice[hidden] { display: none !important; }
+.die {
+  width: 1.4rem; height: 1.4rem;
+  background: #F8F7F2;
+  border-radius: 4px;
+  display: grid;
+  grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+  padding: 2px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.45);
+}
+.die i { width: 3.5px; height: 3.5px; border-radius: 50%; background: #1A1A1A; align-self: center; justify-self: center; }
+.die[data-v="1"] i:nth-child(1) { grid-area: 2/2; }
+.die[data-v="2"] i:nth-child(1) { grid-area: 1/1; } .die[data-v="2"] i:nth-child(2) { grid-area: 3/3; }
+.die[data-v="3"] i:nth-child(1) { grid-area: 1/1; } .die[data-v="3"] i:nth-child(2) { grid-area: 2/2; } .die[data-v="3"] i:nth-child(3) { grid-area: 3/3; }
+.die[data-v="4"] i:nth-child(1) { grid-area: 1/1; } .die[data-v="4"] i:nth-child(2) { grid-area: 1/3; } .die[data-v="4"] i:nth-child(3) { grid-area: 3/1; } .die[data-v="4"] i:nth-child(4) { grid-area: 3/3; }
+.die[data-v="5"] i:nth-child(1) { grid-area: 1/1; } .die[data-v="5"] i:nth-child(2) { grid-area: 1/3; } .die[data-v="5"] i:nth-child(3) { grid-area: 2/2; } .die[data-v="5"] i:nth-child(4) { grid-area: 3/1; } .die[data-v="5"] i:nth-child(5) { grid-area: 3/3; }
+.die[data-v="6"] i:nth-child(1) { grid-area: 1/1; } .die[data-v="6"] i:nth-child(2) { grid-area: 1/3; } .die[data-v="6"] i:nth-child(3) { grid-area: 2/1; } .die[data-v="6"] i:nth-child(4) { grid-area: 2/3; } .die[data-v="6"] i:nth-child(5) { grid-area: 3/1; } .die[data-v="6"] i:nth-child(6) { grid-area: 3/3; }
+.dice-sum { color: #CFE3D9; font-size: .68rem; font-variant-numeric: tabular-nums; text-align: center; }
+.center .hint { color: #7FA294; font-size: .64rem; text-align: center; line-height: 1.45; }
+
+/* ══ 大掣 ══ */
+.actions {
+  display: flex;
+  gap: .5rem;
+  padding: 0 calc(.95rem + env(safe-area-inset-right)) .7rem calc(.95rem + env(safe-area-inset-left));
+}
+.act {
+  flex: 1;
+  padding: .85rem .5rem;
+  min-height: 3rem;
+  border-radius: 12px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  font-size: .93rem;
+  font-weight: 600;
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+/* ══ tabs + panels ══ */
+.tabs { display: flex; background: var(--surface); border-top: 1px solid var(--rule); }
+.tab {
+  flex: 1; border: none; background: none; padding: .7rem;
+  min-height: 2.75rem;
+  color: var(--muted); font-size: .82rem; font-weight: 600;
+  border-bottom: 2px solid transparent;
+}
+.tab.on { color: var(--ink); border-bottom-color: var(--accent); }
+.panel {
+  flex: 1 1 auto;
+  background: var(--surface);
+  overflow-y: auto;
+  min-height: 3.5rem;
+  /* 底部 home indicator */
+  padding-bottom: env(safe-area-inset-bottom);
+  -webkit-overflow-scrolling: touch;
+}
+.panel[hidden] { display: none !important; }
+
+.log-list { list-style: none; margin: 0; padding: 0; }
+.log-list li {
+  display: grid;
+  grid-template-columns: 1.5rem 4.4rem 1fr auto;
+  gap: .5rem;
+  align-items: baseline;
+  padding: .42rem .95rem;
+  font-size: .78rem;
+  border-bottom: 1px solid var(--rule);
+}
+.log-list .seq, .log-list .rnd { color: var(--muted); font-variant-numeric: tabular-nums; }
+.log-list .rnd { font-size: .71rem; }
+.log-list .amt { font-variant-numeric: tabular-nums; font-weight: 600; }
+.log-list li.empty { display: block; padding: 1rem .95rem; color: var(--muted); font-size: .8rem; text-align: center; }
+
+#stats { padding: .5rem .95rem .9rem; }
+.stat-summary { margin: 0 0 .6rem; font-size: .76rem; color: var(--muted); }
+#stats table { width: 100%; border-collapse: collapse; font-size: .76rem; font-variant-numeric: tabular-nums; }
+#stats th { text-align: right; font-weight: 600; color: var(--muted); font-size: .67rem; padding: .28rem .22rem; border-bottom: 1px solid var(--rule); }
+#stats th:first-child, #stats td:first-child { text-align: left; }
+#stats td { text-align: right; padding: .34rem .22rem; border-bottom: 1px solid var(--rule); }
+#stats h3 { font-size: .72rem; color: var(--muted); margin: 1rem 0 .25rem; }
+
+/* 直向：等啲仔女直接參與 body 個 flex，唔好多咗一層 */
+.side { display: contents; }
+
+/* ══ 打橫用 ══ */
+@media (orientation: landscape) and (max-height: 34rem) {
+  /* flex-wrap 限制唔到第二行嘅高度，用 grid 先鎖得住 */
+  body {
+    display: grid;
+    grid-template-columns: 52fr 44fr;
+    grid-template-rows: auto auto minmax(0, 1fr);
+  }
+  header { grid-column: 1 / -1; grid-row: 1;
+           padding-top: calc(.4rem + env(safe-area-inset-top)); padding-bottom: .35rem; }
+  .a2hs { grid-column: 1 / -1; grid-row: 2; }
+  main { grid-column: 1; grid-row: 3; }
+  .side { grid-column: 2; grid-row: 3; }
+  .round-label { font-size: 1.1rem; }
+  .a2hs { width: 100%; }
+  /* 打橫嗰陣個檯面要由高度決定大細，唔係嘅話會撐爆條 viewport */
+  main { min-width: 0; min-height: 0; }
+  .felt { height: 100%; width: auto; max-width: 100%; }
+  .side { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .actions { padding-top: .45rem; padding-bottom: .45rem; }
+  .act { min-height: 2.75rem; padding: .5rem; }
+  .panel { min-height: 0; }
+}
+
+/* ══ 加到主畫面提示 ══ */
+.a2hs {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  margin: 0;
+  padding: .6rem calc(.95rem + env(safe-area-inset-right)) .6rem calc(.95rem + env(safe-area-inset-left));
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--rule);
+  font-size: .76rem;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.a2hs[hidden] { display: none !important; }
+.a2hs b { color: var(--ink); font-weight: 600; }
+.a2hs button {
+  margin-left: auto;
+  flex-shrink: 0;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  border-radius: 8px;
+  padding: .4rem .7rem;
+  font-size: .74rem;
+  min-height: 2.75rem;
+}
+
+/* ══ sheet ══ */
+.scrim {
+  position: fixed; inset: 0;
+  background: rgba(6,16,12,.55);
+  display: grid; place-items: end center;
+  z-index: 10;
+}
+.scrim[hidden] { display: none !important; }
+.sheet {
+  background: var(--bg);
+  width: min(100%, 29rem);
+  max-height: 92vh;
+  overflow-y: auto;
+  border-radius: 18px 18px 0 0;
+  padding: 1.05rem calc(1rem + env(safe-area-inset-right))
+           calc(1.05rem + env(safe-area-inset-bottom)) calc(1rem + env(safe-area-inset-left));
+  overscroll-behavior: contain;
+  box-shadow: 0 -10px 34px -12px rgba(0,0,0,.5);
+}
+.sheet h3 { margin: 0 0 .12rem; font-size: 1.08rem; }
+.sheet .sub { margin: 0 0 .85rem; color: var(--muted); font-size: .79rem; line-height: 1.5; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.6rem, 1fr)); gap: .5rem; }
+.grid.four { grid-template-columns: repeat(4, 1fr); }
+.grid.two { grid-template-columns: repeat(2, 1fr); }
+.opt {
+  padding: .82rem .35rem;
+  border-radius: 11px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  font-size: .93rem;
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.25;
+}
+.opt small { display: block; font-weight: 500; font-size: .67rem; color: var(--muted); margin-top: .12rem; font-variant-numeric: tabular-nums; }
+.opt.primary { background: var(--accent); color: #fff; border-color: transparent; }
+.opt.primary small { color: rgba(255,255,255,.82); }
+.opt.tight { padding: .6rem .2rem; font-size: .82rem; min-height: 2.75rem; }
+.opt.on { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+.sheet .cancel {
+  width: 100%; margin-top: .65rem; padding: .68rem;
+  border-radius: 11px; border: 1px solid var(--rule);
+  background: var(--surface-2); font-size: .88rem;
+}
+.field { margin: .85rem 0 0; }
+.field > label { display: block; font-size: .72rem; color: var(--muted); margin-bottom: .3rem; font-weight: 600; }
+input[type=text], input[type=number] {
+  /* 細過 16px 嘅話，iOS 一 focus 就會自動放大成版嘢，好核突 */
+  font-size: 16px;
+  font-family: inherit;
+  width: 100%;
+  padding: .6rem .7rem;
+  border-radius: 10px;
+  border: 1px solid var(--rule);
+  background: var(--surface);
+  color: var(--ink);
+  -webkit-user-select: text; user-select: text;
+}
+.row { display: flex; gap: .5rem; margin-top: .75rem; }
+.row .opt { flex: 1; }
+.anchor { display: flex; gap: .45rem; align-items: center; }
+.anchor select, .anchor input {
+  font-size: 16px;
+  font-family: inherit;
+  padding: .6rem .5rem;
+  min-height: 2.75rem;
+  border-radius: 10px; border: 1px solid var(--rule);
+  background: var(--surface); color: var(--ink);
+}
+.anchor select { flex: 0 0 6.2rem; }
+.anchor input { flex: 1; min-width: 0; }
+
+/* 賠率表 */
+.rate-wrap { margin-top: .8rem; border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; background: var(--surface); }
+.rate-head { padding: .45rem .7rem; background: var(--surface-2); font-size: .7rem; color: var(--muted); font-weight: 600; }
+table.rates { width: 100%; border-collapse: collapse; font-size: .78rem; font-variant-numeric: tabular-nums; }
+table.rates th { font-size: .66rem; color: var(--muted); font-weight: 600; padding: .3rem .6rem; text-align: right; border-bottom: 1px solid var(--rule); }
+table.rates th:first-child { text-align: left; }
+table.rates td { padding: .3rem .6rem; text-align: right; border-bottom: 1px solid var(--rule); }
+table.rates td:first-child { text-align: left; font-weight: 600; }
+table.rates tr:last-child td { border-bottom: none; }
+table.rates tr.anchor-row td { background: rgba(176,138,46,.14); }
+.warn-line { margin: .55rem 0 0; font-size: .73rem; color: var(--red); }
+.note-line { margin: .55rem 0 0; font-size: .73rem; color: var(--muted); }
+
+.toast {
+  position: fixed; left: 50%; bottom: 1.1rem;
+  transform: translateX(-50%);
+  background: var(--ink); color: var(--bg);
+  padding: .52rem .9rem; border-radius: 9px;
+  font-size: .81rem; z-index: 20; max-width: 90vw; text-align: center;
+}
+.toast[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="round-block">
+    <div class="round-label"><span id="roundLabel">東圈東風</span><span class="streak-pill" id="streak" hidden></span></div>
+    <div class="round-sub" id="ruleNote"></div>
+  </div>
+  <div class="icons">
+    <button class="icon-btn" id="undo" aria-label="還原上一鋪">↺</button>
+    <button class="icon-btn" id="settings" aria-label="設定">⚙</button>
+  </div>
+</header>
+
+<p class="a2hs" id="a2hs" hidden></p>
+
+<main>
+  <div class="felt">
+    <button class="seat" id="seat0"></button>
+    <button class="seat" id="seat1"></button>
+    <button class="seat" id="seat2"></button>
+    <button class="seat" id="seat3"></button>
+    <div class="center">
+      <div class="dice" id="dice" hidden></div>
+      <div class="hint" id="centerHint">撳邊個<br>食糊</div>
+    </div>
+  </div>
+</main>
+
+<div class="side">
+<div class="actions">
+  <button class="act" id="diceBtn">🎲 擲骰</button>
+  <button class="act" id="drawBtn">流局</button>
+</div>
+
+<nav class="tabs" role="tablist">
+  <button class="tab on" data-tab="log" role="tab" aria-selected="true">詳細紀錄</button>
+  <button class="tab" data-tab="stats" role="tab" aria-selected="false">統計數據</button>
+</nav>
+
+<section class="panel" id="panelLog"><ol class="log-list" id="log"></ol></section>
+<section class="panel" id="panelStats" hidden><div id="stats"></div></section>
+</div>
+
+<div class="scrim" id="scrim" hidden>
+  <div class="sheet" id="sheet" role="dialog" aria-modal="true"></div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+
+<script type="module">
+/* ═══ 計分引擎（由 src/*.ts 自動產生，唔好直接改）═══ */
+const __m_types = (() => {
+
+/**
+ * 共用領域型別。
+ *
+ * 核心約定：座位索引 0,1,2,3 按出牌次序排，即 seat+1 就係下家。
+ * 麻雀逆時針行，所以呢個索引一路對應返東→南→西→北。
+ * 方位（門風／局／圈）永遠由莊家位推算，唔會獨立存低。
+ */
+
+/** 座位。固定唔郁（除非換位），唔等於方位。 */
+                                 
+
+/** 方位。0=東 1=南 2=西 3=北 */
+                                 
+
+const WIND_NAMES = ['東', '南', '西', '北']         ;
+
+/** 一鋪牌之後四個座位嘅加減。不變式：加埋一定等於 0。 */
+                                                      
+
+                              
+
+/** id 永不改變，name 隨時改得。事件序列只認 id，唔認 name。 */
+                      
+               
+               
+  
+
+/**
+ * 局面狀態。
+ *
+ * 設計重點：`dealerRotations` 一個數就決定晒圈、局同莊家位——
+ *   莊家位 = (startDealerSeat + dealerRotations) % 4
+ *   局     = dealerRotations % 4
+ *   圈     = floor(dealerRotations / 4) % 4
+ * 所以三者永遠唔會唔同步，而人手 override 亦只係改一個數。
+ */
+                          
+                         
+                        
+                            
+                          
+                    
+                      
+                         
+                        
+  
+
+/**
+ * 一鋪牌入面發生嘅事。
+ *
+ * 注意係 array 唔係單數——碰槓牌（跑馬仔）一鋪可以有幾件收錢嘅事
+ * （暗槓收兩轉、加槓收一轉、最後食糊）。其他玩法長度永遠係 1。
+ *
+ * S = 該玩法嘅計分輸入（香港係 { faan }，台灣係 { tai }，日麻係 { han, fu }）。
+ */
+                          
+                                           
+                                                                    
+                               
+                                     
+                     
+                                                                      
+                                      
+                                                                     
+                             
+                                       
+
+/** 一鋪牌嘅完整紀錄。 */
+                       
+              
+                                      
+                                                  
+                       
+                    
+                         
+                            
+                 
+                
+  
+
+/** 一場牌局打幾耐。 */
+                                                  
+
+/** 每種長度打幾多個圈。 */
+const ROUNDS_IN                             = {
+  east: 1, // 東圈
+  half: 2, // 半莊（東南）
+  full: 4, // 全莊（東南西北）
+};
+
+const ZERO_DELTAS = ()         => [0, 0, 0, 0];
+
+const SEATS                  = [0, 1, 2, 3];
+
+/** 其餘三家。 */
+function otherSeats(seat      )         {
+  return SEATS.filter((s) => s !== seat);
+}
+
+return { WIND_NAMES, ROUNDS_IN, ZERO_DELTAS, SEATS, otherSeats };
+})();
+
+const __m_round = (() => {
+const { ROUNDS_IN, WIND_NAMES } = __m_types;
+/**
+ * 方位同局數推進。
+ *
+ * 最易搞錯嗰忽：「東圈南風」個「南」，同「你今鋪係南家」個「南」，
+ * 係兩樣嘢、兩條公式，而且減數方向相反。
+ *   門風 = 由莊家數起
+ *   局   = 由開局莊家數起
+ */
+
+
+/** 莊家坐邊個位。由落莊次數推算。 */
+function dealerSeat(round            )       {
+  return ((round.startDealerSeat + round.dealerRotations) % 4)        ;
+}
+
+/**
+ * 門風（自風）——你今鋪係咩家。由莊家數起，因為莊家永遠係東。
+ */
+function playerWind(seat      , round            )       {
+  return ((seat - dealerSeat(round) + 4) % 4)        ;
+}
+
+/**
+ * 局——「東圈南風」個「南」。由開局莊家數起。
+ * 留意連莊嗰陣呢個數唔會前進。
+ */
+function handWind(round            )       {
+  return (round.dealerRotations % 4)        ;
+}
+
+/** 圈——東 → 南 → 西 → 北。 */
+function prevailingWind(round            )       {
+  return (Math.floor(round.dealerRotations / 4) % 4)        ;
+}
+
+/** 畫面中間嗰個標題，例如「東圈東風」。 */
+function roundLabel(round            )         {
+  return `${WIND_NAMES[prevailingWind(round)]}圈${WIND_NAMES[handWind(round)]}風`;
+}
+
+/** 連莊標示，例如「連莊 2」。冇連莊就 null。 */
+function consecutiveLabel(round            )                {
+  return round.consecutive > 0 ? `連莊 ${round.consecutive}` : null;
+}
+
+/** 開新一場。 */
+function initialRound(startDealerSeat       = 0)             {
+  return { startDealerSeat, dealerRotations: 0, consecutive: 0 };
+}
+
+/**
+ * 推進去下一鋪。
+ *
+ * dealerKeeps = 莊家繼續做莊（食糊，或者流局而例規係連莊）。
+ * 連莊唔會令個標題前進，只加連莊數——好多實作喺呢度會誤將局數 +1。
+ */
+function advance(round            , dealerKeeps         )             {
+  if (dealerKeeps) {
+    return { ...round, consecutive: round.consecutive + 1 };
+  }
+  return {
+    ...round,
+    dealerRotations: round.dealerRotations + 1,
+    consecutive: 0,
+  };
+}
+
+/** 一場打完未。 */
+function isFinished(round            , length            )          {
+  return round.dealerRotations >= 4 * ROUNDS_IN[length];
+}
+
+/**
+ * 人手 override：直接跳去指定嘅圈同局。
+ *
+ * 真實牌局一定會擺烏龍（記漏一鋪、莊家搞錯、開局揀錯位），
+ * 所以狀態機一定要改得到。因為成個局面由 dealerRotations 一個數決定，
+ * override 就係算返個數出嚟，唔會出現圈／局／莊家唔同步。
+ */
+function setRound(
+  round            ,
+  target                                                                ,
+)             {
+  return {
+    ...round,
+    dealerRotations: target.prevailingWind * 4 + target.handWind,
+    consecutive: target.consecutive ?? 0,
+  };
+}
+
+/** 人手指定莊家坐邊個位（保持喺同一個圈入面）。 */
+function setDealerSeat(round            , seat      )             {
+  const wind = ((seat - round.startDealerSeat + 4) % 4)        ;
+  return {
+    ...round,
+    dealerRotations: prevailingWind(round) * 4 + wind,
+    consecutive: 0,
+  };
+}
+
+return { dealerSeat, playerWind, handWind, prevailingWind, roundLabel, consecutiveLabel, initialRound, advance, isFinished, setRound, setDealerSeat };
+})();
+
+const __m_hk = (() => {
+const { ZERO_DELTAS, otherSeats } = __m_types;
+const { advance, dealerSeat } = __m_round;
+/**
+ * 香港麻雀計分引擎。
+ *
+ * 番數 → 單位 → 過數表。三個參數（基數、級距、封頂）就砌得出全部常見玩法。
+ *
+ * 資料來源：番數級距同全銃／半銃找數，對照粵文維基〈廣東麻雀籌碼計法〉
+ * 同傳統講法「閒家三番四個籌碼，全銃出銃者十六個」驗證。
+ */
+
+
+
+/** 級距。half = 半辣上（每兩番翻一倍），full = 辣辣上（每番翻一倍）。 */
+                                        
+
+/** 找數制。full = 全銃（出銃者一人包），half = 半銃（出銃者雙份，其餘各一份）。 */
+                                        
+
+                        
+                        
+               
+                   
+                  
+                        
+                  
+                   
+                       
+                         
+                                 
+  
+
+/**
+ * 香港嘅計分輸入：得一個番數，由玩家填。
+ *
+ * ── 設計原則：引擎唔會推算任何番數 ──
+ *
+ * 呢個數係**最終番數**，即係玩家喺檯面講嗰個數，乜都計晒入去：
+ * 牌型、正花、中發白、圈風門風、自摸嗰一番⋯⋯全部都係玩家自己加好先填。
+ *
+ * 點解唔幫手計：加番嘅嘢太立立雜雜（正花一番、中發白一番、門風一番⋯⋯），
+ * 而且張張檯例規唔同。要玩家逐樣剔返出嚟，仲慢過佢自己心算個總數。
+ * 佢哋喺檯面本身就已經講緊「食你七番」——直接填七就最快。
+ *
+ * 呢條原則適用於全部玩法：香港嘅番、台灣嘅台、日麻嘅翻同符，
+ * 引擎一律當係輸入，唔會自己推算。
+ */
+                                       
+
+                                         
+
+/**
+ * 半辣上嘅倍數數列：1, 2, 3, 4, 6, 8, 12, 16, 24, 32 …
+ *
+ * 即係由第三項開始每兩步翻一倍。呢個數列就係「半辣上」四個字嘅全部意思。
+ */
+function halfStepMultiplier(k        )         {
+  if (!Number.isInteger(k) || k < 0) {
+    throw new RangeError(`級距索引要係 0 或以上嘅整數，收到 ${k}`);
+  }
+  const m = [1, 2, 3];
+  while (m.length <= k) m.push(2 * m[m.length - 2] );
+  return m[k] ;
+}
+
+/**
+ * 番數 → 單位（基本點）。
+ *
+ * 番數超過封頂就當封頂計（滿糊）。唔夠起糊就係錯——引擎唔會靜雞雞當佢啱，
+ * 因為「唔夠番食糊」係規則問題，唔應該計出個數嚟。
+ */
+function unitFor(faan        , config          )         {
+  if (!Number.isInteger(faan)) {
+    throw new RangeError(`番數要係整數，收到 ${faan}`);
+  }
+  if (faan < config.minFaan) {
+    throw new RangeError(`${faan} 番唔夠 ${config.minFaan} 番起糊`);
+  }
+  const k = Math.min(faan, config.maxFaan) - config.minFaan;
+  return config.scale === 'full'
+    ? config.base * 2 ** k
+    : config.base * halfStepMultiplier(k);
+}
+
+/** 由起糊到滿糊嘅完整單位表，用嚟顯示同對數。 */
+function unitTable(config          )                                   {
+  const out = [];
+  for (let f = config.minFaan; f <= config.maxFaan; f++) {
+    out.push({ faan: f, unit: unitFor(f, config) });
+  }
+  return out;
+}
+
+/** 一件事嘅過數表。加落總表度。 */
+function applyEvent(
+  deltas        ,
+  ev         ,
+  config          ,
+)       {
+  switch (ev.kind) {
+    case 'win': {
+      const selfDraw = ev.from === 'selfDraw';
+      // 玩家填幾多就係幾多。引擎唔會加、唔會推算——見 HKScore 嘅註解。
+      const unit = unitFor(ev.score.faan, config);
+
+      if (selfDraw) {
+        // 自摸：三家各畀兩份（兩制相同）
+        for (const s of otherSeats(ev.winner)) {
+          deltas[s] -= 2 * unit;
+          deltas[ev.winner] += 2 * unit;
+        }
+      } else if (config.liability === 'full') {
+        // 全銃：出銃者一人畀四份
+        deltas[ev.from] -= 4 * unit;
+        deltas[ev.winner] += 4 * unit;
+      } else {
+        // 半銃：出銃者雙份，其餘兩家各一份
+        deltas[ev.from] -= 2 * unit;
+        deltas[ev.winner] += 2 * unit;
+        for (const s of otherSeats(ev.winner)) {
+          if (s === ev.from) continue;
+          deltas[s] -= unit;
+          deltas[ev.winner] += unit;
+        }
+      }
+      break;
+    }
+
+    case 'draw':
+      // 香港流局唔使找數。真正影響喺莊家連定落，見 nextRound。
+      break;
+
+    case 'penalty': {
+      for (const s of otherSeats(ev.by)) {
+        deltas[ev.by] -= ev.perPlayer;
+        deltas[s] += ev.perPlayer;
+      }
+      break;
+    }
+
+    case 'adjust': {
+      const sum = ev.deltas.reduce((a, b) => a + b, 0);
+      if (sum !== 0) {
+        throw new RangeError(`人手改數要加埋等於 0，而家係 ${sum}`);
+      }
+      for (const s of [0, 1, 2, 3]          ) deltas[s] += ev.deltas[s];
+      break;
+    }
+
+    case 'kong':
+      throw new Error('槓牌即時收錢係跑馬仔玩法，香港麻雀唔用');
+  }
+}
+
+/**
+ * 結算一鋪牌。純函數，冇 side effect。
+ *
+ * 回傳過數表同下一鋪嘅局面。過數表加埋一定等於 0。
+ */
+function settle(
+  events           ,
+  round            ,
+  config          ,
+)                                            {
+  if (events.length === 0) {
+    throw new RangeError('一鋪牌至少要有一件事（食糊或者流局）');
+  }
+
+  const deltas = ZERO_DELTAS();
+  for (const ev of events) applyEvent(deltas, ev, config);
+
+  const sum = deltas.reduce((a, b) => a + b, 0);
+  if (sum !== 0) {
+    throw new Error(`內部錯誤：過數表加埋等於 ${sum}，應該係 0`);
+  }
+
+  const dealer = dealerSeat(round);
+  const dealerWon = events.some((e) => e.kind === 'win' && e.winner === dealer);
+  const wasDraw = events.some((e) => e.kind === 'draw');
+  const dealerKeeps = dealerWon || (wasDraw && config.dealerContinuesOnDraw);
+
+  return { deltas, nextRound: advance(round, dealerKeeps) };
+}
+
+/** 你 app screenshot 入面嗰七個玩法。 */
+const PRESETS                           = {
+  '3番4 半辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
+  '3番4 辣辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
+  '二五雞 半辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
+  '二五雞 辣辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
+  '五一 半辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
+  '五一 辣辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
+};
+
+/** 自訂玩法嘅起點。用家由呢度開始改。 */
+const CUSTOM_TEMPLATE           = {
+  base: 8,
+  minFaan: 3,
+  maxFaan: 10,
+  scale: 'half',
+  liability: 'full',
+  dealerContinuesOnDraw: true,
+};
+
+/** 封頂番數揀得幾多。八番滿糊最常見，但有人打到十三番。 */
+const MAX_FAAN_CHOICES = [8, 9, 10, 11, 12, 13];
+
+/**
+ * 由「某個番數想打幾大」反推基數。
+ *
+ * 玩家心目中通常唔係諗「基數幾多」，而係「食你八番收幾多」。
+ * 所以俾佢揀一個番數同一個銀碼，其餘成張表由級距規則自動跳。
+ *
+ * 除唔盡就取最接近嘅整數（基數一定要係整數，唔係嘅話成張表會出現小數）。
+ * 取完之後真正嘅銀碼可能同輸入唔同，所以一定要 render 返成張表俾人睇。
+ */
+function baseForAnchor(
+  anchorFaan        ,
+  amount        ,
+  config                                                 ,
+)         {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new RangeError(`銀碼要大過 0，收到 ${amount}`);
+  }
+  if (anchorFaan < config.minFaan || anchorFaan > config.maxFaan) {
+    throw new RangeError(`${anchorFaan} 番唔喺 ${config.minFaan}–${config.maxFaan} 範圍入面`);
+  }
+  const k = anchorFaan - config.minFaan;
+  const m = config.scale === 'full' ? 2 ** k : halfStepMultiplier(k);
+  return Math.max(1, Math.round(amount / m));
+}
+
+/** 檢查一個自訂玩法合唔合理。回一句人話，冇問題就回 null。 */
+function validateConfig(config          )                {
+  if (!Number.isInteger(config.base) || config.base < 1) return '基數要係 1 或以上嘅整數';
+  if (!Number.isInteger(config.minFaan) || config.minFaan < 1) return '起糊番數要係 1 或以上';
+  if (!Number.isInteger(config.maxFaan)) return '封頂番數要係整數';
+  if (config.maxFaan < config.minFaan) return '封頂番數唔可以細過起糊番數';
+  if (config.maxFaan - config.minFaan > 20) return '封頂同起糊爭太遠，個表會長到冇用';
+  return null;
+}
+
+return { halfStepMultiplier, unitFor, unitTable, settle, PRESETS, CUSTOM_TEMPLATE, MAX_FAAN_CHOICES, baseForAnchor, validateConfig };
+})();
+
+const __m_tw = (() => {
+const { ZERO_DELTAS, otherSeats } = __m_types;
+const { advance, dealerSeat } = __m_round;
+/**
+ * 台灣麻將計分引擎。
+ *
+ * 公式一行就講完：**每個付錢嘅人畀「底 + 台 × 台數」**。
+ * 難嘅唔係條式，係莊家台。
+ *
+ * 資料來源：台灣麻將維基同常見台數表；連莊 2N+1（連一拉一 3台、連二拉二 5台）。
+ */
+
+
+
+/** 台灣嘅計分輸入：玩家自己數嘅台數（唔包莊家台）。 */
+                                      
+
+                                         
+
+/**
+ * 莊家台：基本 1 台，連莊 N 次就 2N+1 台
+ * （連一拉一 3台、連二拉二 5台，如此類推）。
+ */
+function dealerTai(round            )         {
+  return 2 * round.consecutive + 1;
+}
+
+/**
+ * 一個人要畀幾多。
+ *
+ * 莊家台只計喺**有莊家份嗰條數**度——即係莊家贏（人人畀佢），
+ * 或者莊家畀錢（佢放槍／人哋自摸）。莊家冇份嗰筆唔加。
+ */
+function payment(
+  payer      ,
+  winner      ,
+  tai        ,
+  round            ,
+  config          ,
+)         {
+  if (!Number.isInteger(tai) || tai < 0) {
+    throw new RangeError(`台數要係 0 或以上嘅整數，收到 ${tai}`);
+  }
+  const dealer = dealerSeat(round);
+  const involvesDealer = payer === dealer || winner === dealer;
+  const extra = config.autoDealerTai && involvesDealer ? dealerTai(round) : 0;
+  return config.base + config.tai * (tai + extra);
+}
+
+function applyEvent(
+  deltas        ,
+  ev         ,
+  round            ,
+  config          ,
+)       {
+  switch (ev.kind) {
+    case 'win': {
+      const tai = ev.score.tai;
+      if (ev.from === 'selfDraw') {
+        // 自摸：三家各畀一份
+        for (const s of otherSeats(ev.winner)) {
+          const amount = payment(s, ev.winner, tai, round, config);
+          deltas[s] -= amount;
+          deltas[ev.winner] += amount;
+        }
+      } else {
+        // 放槍：淨係出銃嗰個畀
+        const amount = payment(ev.from, ev.winner, tai, round, config);
+        deltas[ev.from] -= amount;
+        deltas[ev.winner] += amount;
+      }
+      break;
+    }
+
+    case 'draw':
+      break;
+
+    case 'penalty':
+      for (const s of otherSeats(ev.by)) {
+        deltas[ev.by] -= ev.perPlayer;
+        deltas[s] += ev.perPlayer;
+      }
+      break;
+
+    case 'adjust': {
+      const sum = ev.deltas.reduce((a, b) => a + b, 0);
+      if (sum !== 0) {
+        throw new RangeError(`人手改數要加埋等於 0，而家係 ${sum}`);
+      }
+      for (const s of [0, 1, 2, 3]          ) deltas[s] += ev.deltas[s];
+      break;
+    }
+
+    case 'kong':
+      throw new Error('槓牌即時收錢係跑馬仔玩法，台灣麻將唔用');
+  }
+}
+
+function settle(
+  events           ,
+  round            ,
+  config          ,
+)                                            {
+  if (events.length === 0) {
+    throw new RangeError('一鋪牌至少要有一件事（食糊或者流局）');
+  }
+
+  const deltas = ZERO_DELTAS();
+  for (const ev of events) applyEvent(deltas, ev, round, config);
+
+  const sum = deltas.reduce((a, b) => a + b, 0);
+  if (sum !== 0) {
+    throw new Error(`內部錯誤：過數表加埋等於 ${sum}，應該係 0`);
+  }
+
+  const dealer = dealerSeat(round);
+  const dealerWon = events.some((e) => e.kind === 'win' && e.winner === dealer);
+  const wasDraw = events.some((e) => e.kind === 'draw');
+  return {
+    deltas,
+    nextRound: advance(round, dealerWon || (wasDraw && config.dealerContinuesOnDraw)),
+  };
+}
+
+/** 你 app screenshot 入面嗰啲台灣玩法。 */
+const TW_PRESETS                           = {
+  '100底20台': { base: 100, tai: 20, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
+  '50底20台': { base: 50, tai: 20, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
+  '30底10台': { base: 30, tai: 10, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
+  '20底10台': { base: 20, tai: 10, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
+  '200底40台': { base: 200, tai: 40, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
+};
+
+return { dealerTai, payment, settle, TW_PRESETS };
+})();
+
+const __m_session = (() => {
+const { ZERO_DELTAS } = __m_types;
+/**
+ * 一場牌局：事件序列 → 分數。
+ *
+ * 只存事件，唔存分數。分數係即時 reduce 出嚟嘅，所以：
+ *   還原 = 撳走最後一鋪
+ *   改名 = 改 Player.name，歷史零影響
+ *   換位 = 之後嘅 seats 換次序，舊牌各自帶住自己嗰份快照
+ */
+
+
+/** 每個座位嘅累計。 */
+function seatTotals   (hands           )         {
+  const out = ZERO_DELTAS();
+  for (const h of hands) {
+    for (const s of [0, 1, 2, 3]          ) out[s] += h.deltas[s];
+  }
+  return out;
+}
+
+/**
+ * 一個人嘅累計。
+ *
+ * 逐鋪搵佢當時坐邊個位，加返嗰個位嘅數。
+ * 佢中途轉過位、改過三次名都好，呢條式都啱——因為快照存嘅係 id。
+ */
+function playerTotal   (hands           , playerId          )         {
+  let total = 0;
+  for (const h of hands) {
+    for (const s of [0, 1, 2, 3]          ) {
+      if (h.seats[s] === playerId) total += h.deltas[s];
+    }
+  }
+  return total;
+}
+
+/** 全部人嘅累計，用嚟出「現時賽果」。 */
+function standings      (
+  session               ,
+)                                      {
+  return session.roster
+    .map((player) => ({ player, total: playerTotal(session.hands, player.id) }))
+    .sort((a, b) => b.total - a.total);
+}
+
+/** 記低一鋪。回傳新 session，唔會改原本嗰個。 */
+function appendHand      (
+  session               ,
+  events                   ,
+  settle   
+                              
+                      
+              
+                                                ,
+  note         ,
+)                {
+  const { deltas, nextRound } = settle(events, session.round, session.config);
+  const hand          = {
+    seq: session.hands.length + 1,
+    seats: [...session.seats],
+    round: session.round,
+    events,
+    deltas,
+    // 只有真係有 note 先加個 key——JSON 唔會存 undefined，
+    // 有 key 但係 undefined 就會令「存完讀返」唔完全一樣。
+    ...(note === undefined ? {} : { note }),
+  };
+  return { ...session, hands: [...session.hands, hand], round: nextRound };
+}
+
+/**
+ * 還原最後一鋪。
+ *
+ * 因為每一鋪都影印咗當時嘅局面，還原就係「拎返上一鋪嗰份」——
+ * 唔使寫任何反向邏輯，所以冇得計錯。
+ */
+function undoLastHand      (session               )                {
+  if (session.hands.length === 0) return session;
+  const hands = session.hands.slice(0, -1);
+  const last = session.hands[session.hands.length - 1] ;
+  return { ...session, hands, round: last.round };
+}
+
+/** 改名。歷史零影響——事件序列由頭到尾冇出現過名。 */
+function renamePlayer      (
+  session               ,
+  playerId          ,
+  name        ,
+)                {
+  return {
+    ...session,
+    roster: session.roster.map((p) => (p.id === playerId ? { ...p, name } : p)),
+  };
+}
+
+/** 換位：兩個座位對調。只影響之後嘅牌。 */
+function swapSeats      (
+  session               ,
+  a      ,
+  b      ,
+)                {
+  const seats = [...session.seats]                          ;
+  [seats[a], seats[b]] = [seats[b] , seats[a] ];
+  return { ...session, seats };
+}
+
+/** 換人：新人坐低頂走原本嗰個。只影響之後嘅牌。 */
+function substitutePlayer      (
+  session               ,
+  seat      ,
+  incoming        ,
+)                {
+  const roster = session.roster.some((p) => p.id === incoming.id)
+    ? session.roster
+    : [...session.roster, incoming];
+  const seats = [...session.seats]                          ;
+  seats[seat] = incoming.id;
+  return { ...session, roster, seats };
+}
+
+return { seatTotals, playerTotal, standings, appendHand, undoLastHand, renamePlayer, swapSeats, substitutePlayer };
+})();
+
+const __m_dice = (() => {
+const { WIND_NAMES } = __m_types;
+/**
+ * 麻雀骰。
+ *
+ * 骰唔止係出個數字——喺麻雀入面佢係用嚟**數位**嘅：
+ * 由擲骰嗰個人起計 1，逆時針數到骰子總和嗰個位。
+ * 開局擲骰決定邊個做莊，之後每鋪莊家擲骰決定由邊度開牌。
+ *
+ * 所以呢度除咗擲骰，仲會計埋「數到邊個位」——嗰個先係玩家真正想知嘅嘢。
+ */
+
+
+/**
+ * 由擲骰者起計 1，數 `count` 個位（逆時針），落喺邊個座位。
+ *
+ * 擲骰者自己係 1，所以要減一先取模：
+ *   總和 1 → 自己、2 → 下家、5 → 又返到自己。
+ */
+function seatFromCount(roller      , count        )       {
+  if (!Number.isInteger(count) || count < 1) {
+    throw new RangeError(`點數要係 1 或以上嘅整數，收到 ${count}`);
+  }
+  return ((roller + count - 1) % 4)        ;
+}
+
+/**
+ * 擲骰。
+ *
+ * `rng` 可以注入，令測試 reproducible；平時就用 Math.random。
+ */
+function rollDice(
+  roller      ,
+  count = 3,
+  rng               = Math.random,
+)           {
+  if (!Number.isInteger(count) || count < 1 || count > 5) {
+    throw new RangeError(`骰子數目要喺 1 到 5 之間，收到 ${count}`);
+  }
+  const values = Array.from({ length: count }, () => 1 + Math.floor(rng() * 6));
+  const total = values.reduce((a, b) => a + b, 0);
+  return { values, total, roller, landsOn: seatFromCount(roller, total) };
+}
+
+/** 一句講清楚粒骰結果，例如「擲到 11 → 西家」。 */
+function describeRoll(roll          , dealerSeat      )         {
+  const wind = WIND_NAMES[((roll.landsOn - dealerSeat + 4) % 4)                 ];
+  return `${roll.values.join(' + ')} = ${roll.total} → ${wind}家`;
+}
+
+return { seatFromCount, rollDice, describeRoll };
+})();
+
+const __m_stats = (() => {
+
+/**
+ * 統計數據。
+ *
+ * 全部由同一條事件序列 derive，唔會另外存——所以永遠唔會同分數唔同步。
+ */
+
+                                                       
+
+                           
+               
+                
+                        
+               
+                    
+                  
+                
+                              
+                         
+                
+                  
+                
+  
+
+                                  
+
+/**
+ * 逐個玩家嘅統計。
+ *
+ * 留意係跟 PlayerId 數，唔係跟座位——所以中途換位、改名都唔會撈亂。
+ */
+function playerStats                    (
+  hands           ,
+  playerIds            ,
+)                {
+  return playerIds.map((id) => {
+    let played = 0;
+    let wins = 0;
+    let selfDraws = 0;
+    let deals = 0;
+    let faanSum = 0;
+    let faanCount = 0;
+    let biggest = 0;
+    let total = 0;
+
+    for (const hand of hands) {
+      const seat = hand.seats.indexOf(id)             ;
+      if (seat === -1) continue; // 嗰陣未落場
+      played++;
+      total += hand.deltas[seat] ;
+      biggest = Math.max(biggest, hand.deltas[seat] );
+
+      for (const ev of hand.events) {
+        if (ev.kind !== 'win') continue;
+        if (ev.winner === seat) {
+          wins++;
+          if (ev.from === 'selfDraw') selfDraws++;
+          if (typeof ev.score?.faan === 'number') {
+            faanSum += ev.score.faan;
+            faanCount++;
+          }
+        } else if (ev.from === seat) {
+          deals++;
+        }
+      }
+    }
+
+    return {
+      id,
+      hands: played,
+      wins,
+      selfDraws,
+      deals,
+      avgFaan: faanCount > 0 ? faanSum / faanCount : null,
+      biggest,
+      total,
+    };
+  });
+}
+
+/**
+ * 對戰矩陣：邊個最鍾意出銃俾邊個。
+ *
+ * matrix[出銃者][食糊者] = 次數。四個人食飯講得耐嘅數字。
+ */
+function dealMatrix   (
+  hands           ,
+  playerIds            ,
+)             {
+  const index = new Map(playerIds.map((id, i) => [id, i]));
+  const matrix = playerIds.map(() => playerIds.map(() => 0));
+
+  for (const hand of hands) {
+    for (const ev of hand.events) {
+      if (ev.kind !== 'win' || ev.from === 'selfDraw') continue;
+      const dealer = index.get(hand.seats[ev.from] );
+      const winner = index.get(hand.seats[ev.winner] );
+      if (dealer === undefined || winner === undefined) continue;
+      matrix[dealer] [winner] ++;
+    }
+  }
+  return matrix;
+}
+
+/** 成場嘅概況。 */
+function sessionStats   (hands           )   
+                
+                
+                    
+                        
+  {
+  let draws = 0;
+  let selfDraws = 0;
+  let longestStreak = 0;
+
+  for (const hand of hands) {
+    longestStreak = Math.max(longestStreak, hand.round.consecutive);
+    for (const ev of hand.events) {
+      if (ev.kind === 'draw') draws++;
+      if (ev.kind === 'win' && ev.from === 'selfDraw') selfDraws++;
+    }
+  }
+  return { hands: hands.length, draws, selfDraws, longestStreak };
+}
+
+return { playerStats, dealMatrix, sessionStats };
+})();
+
+const __m_storage = (() => {
+
+/**
+ * 儲存同匯出。
+ *
+ * 存嘅係成條事件序列，唔係分數——分數幾時都可以由事件重新計返出嚟。
+ * 一百鋪牌大約 10KB，所以 localStorage 綽綽有餘。
+ *
+ * 呢度只做「物件 ↔ 字串」，唔掂 localStorage 本身，
+ * 咁 Node 度就測試得到，瀏覽器嗰邊包多一層就得。
+ */
+
+const SCHEMA = 1;
+
+                           
+                 
+                  
+             
+  
+
+function serialize   (session   )         {
+  const envelope              = { schema: SCHEMA, savedAt: Date.now(), session };
+  return JSON.stringify(envelope);
+}
+
+/**
+ * 讀返出嚟。
+ *
+ * 讀唔到（第一次用、資料壞咗、schema 太新）就回 null，
+ * 由叫嘅人決定點做——**唔會擲錯**，因為開唔到 app 係最差嘅結果。
+ */
+function deserialize   (raw               )           {
+  if (!raw) return null;
+  let parsed         ;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  if (typeof parsed !== 'object' || parsed === null) return null;
+
+  const env = parsed                        ;
+  if (typeof env.schema !== 'number' || env.schema > SCHEMA) return null;
+  if (!env.session || typeof env.session !== 'object') return null;
+
+  return env.session;
+}
+
+/** 匯出成 CSV，方便攞去 Excel 對數。 */
+function toCSV(
+  hands   
+                
+                    
+                     
+                   
+     ,
+  nameOf                        ,
+)         {
+  const rows = [['鋪', '玩家1', '玩家2', '玩家3', '玩家4'].join(',')];
+  for (const h of hands) {
+    rows.push([
+      h.seq,
+      ...h.seats.map((id, i) => `${nameOf(id)} ${h.deltas[i]  > 0 ? '+' : ''}${h.deltas[i]}`),
+    ].join(','));
+  }
+  return rows.join('\n');
+}
+
+return { serialize, deserialize, toCSV };
+})();
+
+const __m_variant = (() => {
+const hk = __m_hk;
+const tw = __m_tw;
+/**
+ * 玩法登記處。
+ *
+ * 呢個係框架文件講嗰個 Variant 介面嘅實際落地。目的只有一個：
+ * **令介面唔使識任何一種麻雀**。
+ *
+ * 介面淨係識三件事——問邊個玩法攞預設、攞一行摘要、攞個輸入格有咩揀。
+ * 加第六種玩法 = 喺呢度加一項，介面一行都唔使改。
+ */
+
+                                                                      
+
+
+/** 輸入格上面一粒掣。 */
+                           
+                         
+                
+                     
+               
+                    
+                 
+  
+
+                            
+               
+                          
+                    
+  
+
+                           
+             
+               
+                               
+                    
+                               
+                                             
+                                     
+                 
+                      
+                              
+                                    
+                
+                                                              
+         
+                             
+                      
+                
+                                               
+  
+
+const HK              = {
+  id: 'hk',
+  name: '香港麻雀',
+  presets: hk.PRESETS,
+  summary: (c             ) =>
+    `${c.minFaan}番起糊 ${hk.unitFor(c.minFaan, c)}　·　${c.maxFaan}番滿糊 ${hk.unitFor(c.maxFaan, c)}` +
+    `　·　${c.scale === 'half' ? '半辣上' : '辣辣上'}　·　${c.liability === 'full' ? '全銃' : '半銃'}`,
+  headerSummary: (c             ) =>
+    `${c.maxFaan}番滿糊 ${hk.unitFor(c.maxFaan, c)}　·　${c.liability === 'full' ? '全銃' : '半銃'}`,
+  scorePrompt: '幾多番？　牌型、正花、中發白、自摸嗰一番，全部自己加埋填總數。',
+  describeScore: (score            ) => `${score.faan}番`,
+  scoreOptions: (c             , ctx) =>
+    hk.unitTable(c).map(({ faan, unit }) => ({
+      label: `${faan}番`,
+      // 自摸三家各兩份 = 6，出銃四份 = 4
+      note: `+${(ctx.from === 'selfDraw' ? 6 : 4) * unit}`,
+      score: { faan },
+    })),
+  settle: hk.settle,
+};
+
+const TW              = {
+  id: 'tw',
+  name: '台灣麻將',
+  presets: tw.TW_PRESETS,
+  summary: (c             ) =>
+    `${c.base}底　·　1台 ${c.tai}　·　莊家台${c.autoDealerTai ? '自動計' : '自己填'}`,
+  headerSummary: (c             ) => `${c.base}底 ${c.tai}台`,
+  scorePrompt: '幾多台？　門清、自摸、花牌、牌型全部自己加埋填總數。',
+  describeScore: (score            ) => `${score.tai}台`,
+  scoreOptions: (c             , ctx) => {
+    const opts                = [];
+    for (let tai = 0; tai <= c.maxTai; tai++) {
+      // 贏家實收幾多——莊家台計唔計、邊個畀，全部喺呢度反映返
+      const others = ([0, 1, 2, 3]          ).filter((s) => s !== ctx.winner);
+      const receives =
+        ctx.from === 'selfDraw'
+          ? others.reduce((sum, s) => sum + tw.payment(s, ctx.winner, tai, ctx.round, c), 0)
+          : tw.payment(ctx.from        , ctx.winner, tai, ctx.round, c);
+      opts.push({ label: `${tai}台`, note: `+${receives}`, score: { tai } });
+    }
+    return opts;
+  },
+  settle: tw.settle,
+};
+
+/** 寫好晒、測試好晒嘅玩法。 */
+const ALL_VARIANTS                = [HK, TW];
+
+/**
+ * MVP1 淨係開香港（廣東）牌，專心整到滿意先。
+ * 台灣嘅引擎已經寫好同測試好，MVP2 只需要喺呢度加返 'tw'。
+ */
+const ENABLED_VARIANT_IDS = ['hk'];
+
+const VARIANTS                = ALL_VARIANTS.filter((v) =>
+  ENABLED_VARIANT_IDS.includes(v.id),
+);
+
+function variantById(id        )              {
+  // 用 ALL_VARIANTS——舊 session 可能係未開嘅玩法，開得返先唔會爆
+  const found = ALL_VARIANTS.find((v) => v.id === id);
+  if (!found) throw new RangeError(`唔識呢個玩法：${id}`);
+  return found;
+}
+
+/** 由預設個名反查係邊個玩法。開舊 session 嗰陣用。 */
+function variantOfPreset(presetName        )                     {
+  return ALL_VARIANTS.find((v) => presetName in v.presets) ?? null;
+}
+
+return { ALL_VARIANTS, ENABLED_VARIANT_IDS, VARIANTS, variantById, variantOfPreset };
+})();
+
+const { WIND_NAMES } = __m_types;
+const { initialRound, dealerSeat, playerWind, roundLabel, consecutiveLabel, setRound, advance } = __m_round;
+const { seatTotals, playerTotal, appendHand, undoLastHand, renamePlayer, swapSeats, substitutePlayer } = __m_session;
+const { rollDice } = __m_dice;
+const { playerStats, dealMatrix, sessionStats } = __m_stats;
+const { serialize, deserialize, toCSV } = __m_storage;
+const { VARIANTS, variantById, variantOfPreset } = __m_variant;
+const { unitFor, unitTable, baseForAnchor, validateConfig, MAX_FAAN_CHOICES } = __m_hk;
+
+/* ═══ 介面 ═══ */
+/**
+ * 介面。
+ *
+ * 計分引擎嘅 function（variantById / roundLabel / rollDice / playerStats …）
+ * 係 build 嗰陣接喺前面，所以呢度直接叫得，唔使 import。
+ *
+ * 呢個檔案冇任何麻雀規則——所有數、所有方位、所有骰，全部問引擎攞。
+ */
+
+const $ = (id) => document.getElementById(id);
+// 唔用「東家／南家」做預設名——方位每次落莊就轉，
+// 到時「北家」坐咗喺東位，睇落好撈。
+const DEFAULT_NAMES = ['玩家一', '玩家二', '玩家三', '玩家四'];
+const STORAGE_KEY = 'mahjong.session.v1';
+const CUSTOM = '自訂';
+
+let session;
+let lastRoll = null;
+
+/* ── session ── */
+
+function newSession(presetName, diceCount = 3, configOverride = null) {
+  const v = variantOfPreset(presetName) ?? VARIANTS[0];
+  return {
+    id: String(Date.now()),
+    variantId: v.id,
+    config: configOverride ?? { ...v.presets[presetName] },
+    presetName,
+    diceCount,
+    roster: DEFAULT_NAMES.map((name, i) => ({ id: `p${i}`, name })),
+    round: initialRound(0),
+    seats: ['p0', 'p1', 'p2', 'p3'],
+    hands: [],
+  };
+}
+
+const firstPreset = () => Object.keys(VARIANTS[0].presets)[0];
+
+function save() {
+  try {
+    localStorage.setItem(STORAGE_KEY, serialize(session));
+  } catch {
+    /* 私隱模式或者爆咗容量——唔好因為存唔到就搞到 app 用唔到 */
+  }
+}
+
+function load() {
+  let raw = null;
+  try {
+    raw = localStorage.getItem(STORAGE_KEY);
+  } catch {
+    return null;
+  }
+  const restored = deserialize(raw);
+  if (!restored || !restored.config) return null;
+  restored.variantId ??= variantOfPreset(restored.presetName ?? '')?.id ?? VARIANTS[0].id;
+  if (!VARIANTS.some((v) => v.id === restored.variantId)) return null;
+  restored.diceCount ??= 3;
+  restored.presetName ??= CUSTOM;
+  return restored;
+}
+
+const variant = () => variantById(session.variantId);
+const nameOf = (pid) => session.roster.find((p) => p.id === pid)?.name ?? '？';
+const fmt = (n) => (n > 0 ? `+${n}` : String(n));
+const cls = (n) => (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero');
+
+/* ── 畫面 ── */
+
+function render() {
+  const totals = seatTotals(session.hands);
+  const dealer = dealerSeat(session.round);
+  const best = Math.max(...totals);
+  const someoneAhead = best > 0 && totals.filter((t) => t === best).length === 1;
+
+  for (let seat = 0; seat < 4; seat++) {
+    const el = $(`seat${seat}`);
+    const total = totals[seat];
+    const wind = WIND_NAMES[playerWind(seat, session.round)];
+    const isDealer = seat === dealer;
+    const isLeader = someoneAhead && total === best;
+
+    el.classList.toggle('dealer', isDealer);
+    el.classList.toggle('lands', lastRoll?.landsOn === seat);
+    el.innerHTML = '';
+    el.setAttribute(
+      'aria-label',
+      `${wind}家 ${nameOf(session.seats[seat])}${isDealer ? '（莊）' : ''}${isLeader ? '（暫時領先）' : ''}，${fmt(total)}。撳一下記低佢食糊`,
+    );
+
+    if (isDealer) {
+      const t = document.createElement('span');
+      t.className = 'tag';
+      t.textContent = '莊';
+      el.append(t);
+    }
+    if (isLeader) {
+      const c = document.createElement('span');
+      c.className = 'lead';
+      c.textContent = '👑';
+      c.setAttribute('aria-hidden', 'true');
+      el.append(c);
+    }
+    const w = document.createElement('span');
+    w.className = 'wind';
+    w.textContent = wind;
+    const n = document.createElement('span');
+    n.className = 'nm';
+    n.textContent = nameOf(session.seats[seat]);
+    const a = document.createElement('span');
+    a.className = `amt ${cls(total)}`;
+    a.textContent = fmt(total);
+    el.append(w, n, a);
+  }
+
+  $('roundLabel').textContent = roundLabel(session.round);
+  const streak = consecutiveLabel(session.round);
+  $('streak').textContent = streak ?? '';
+  $('streak').hidden = !streak;
+  $('ruleNote').textContent = `${session.presetName}　·　${variant().headerSummary(session.config)}`;
+  $('undo').disabled = session.hands.length === 0;
+
+  renderDice();
+  renderLog();
+  renderStats();
+  save();
+}
+
+function renderDice() {
+  const box = $('dice');
+  const hint = $('centerHint');
+  box.innerHTML = '';
+  if (!lastRoll) {
+    box.hidden = true;
+    hint.hidden = false;
+    return;
+  }
+  box.hidden = false;
+  hint.hidden = true;
+  for (const v of lastRoll.values) {
+    const d = document.createElement('span');
+    d.className = 'die';
+    d.dataset.v = v;
+    d.setAttribute('aria-label', `${v} 點`);
+    for (let i = 0; i < v; i++) d.append(document.createElement('i'));
+    box.append(d);
+  }
+  const sum = document.createElement('span');
+  sum.className = 'dice-sum';
+  sum.textContent = `${lastRoll.total} → ${nameOf(session.seats[lastRoll.landsOn])}`;
+  box.append(sum);
+}
+
+function describe(hand) {
+  const ev = hand.events[0];
+  if (ev.kind === 'draw') return '流局';
+  if (ev.kind === 'win') {
+    const who = nameOf(hand.seats[ev.winner]);
+    const how = ev.from === 'selfDraw' ? '自摸' : `食 ${nameOf(hand.seats[ev.from])}`;
+    return `${who} ${how} ${variant().describeScore(ev.score)}`;
+  }
+  return ev.kind;
+}
+
+function renderLog() {
+  const ol = $('log');
+  ol.innerHTML = '';
+  if (session.hands.length === 0) {
+    const li = document.createElement('li');
+    li.className = 'empty';
+    li.textContent = '未開始。撳一張牌記低邊個食糊。';
+    ol.append(li);
+    return;
+  }
+  for (const hand of [...session.hands].reverse()) {
+    const li = document.createElement('li');
+    const biggest = hand.deltas.indexOf(Math.max(...hand.deltas));
+    const amount = hand.deltas[biggest];
+    const seq = document.createElement('span');
+    seq.className = 'seq';
+    seq.textContent = hand.seq;
+    const rnd = document.createElement('span');
+    rnd.className = 'rnd';
+    rnd.textContent = roundLabel(hand.round);
+    const what = document.createElement('span');
+    what.textContent = describe(hand);
+    const amt = document.createElement('span');
+    amt.className = `amt ${cls(amount)}`;
+    amt.textContent = amount === 0 ? '—' : fmt(amount);
+    li.append(seq, rnd, what, amt);
+    ol.append(li);
+  }
+}
+
+function renderStats() {
+  const box = $('stats');
+  box.innerHTML = '';
+  const ids = session.roster.map((p) => p.id);
+  const rows = playerStats(session.hands, ids);
+  const overall = sessionStats(session.hands);
+
+  const summary = document.createElement('p');
+  summary.className = 'stat-summary';
+  summary.textContent = overall.hands === 0
+    ? '打多幾鋪就有數睇。'
+    : `打咗 ${overall.hands} 鋪　·　流局 ${overall.draws}　·　自摸 ${overall.selfDraws}　·　最長連莊 ${overall.longestStreak}`;
+  box.append(summary);
+  if (overall.hands === 0) return;
+
+  const table = document.createElement('table');
+  table.innerHTML =
+    '<thead><tr><th>玩家</th><th>食糊</th><th>自摸</th><th>出銃</th><th>平均</th><th>最大</th><th>總數</th></tr></thead>';
+  const tbody = document.createElement('tbody');
+  for (const r of [...rows].sort((a, b) => b.total - a.total)) {
+    const tr = document.createElement('tr');
+    const cells = [
+      nameOf(r.id), r.wins, r.selfDraws, r.deals,
+      r.avgFaan === null ? '—' : r.avgFaan.toFixed(1),
+      r.biggest === 0 ? '—' : `+${r.biggest}`,
+      fmt(r.total),
+    ];
+    cells.forEach((v, i) => {
+      const td = document.createElement('td');
+      td.textContent = v;
+      if (i === 6) td.className = cls(r.total);
+      tr.append(td);
+    });
+    tbody.append(tr);
+  }
+  table.append(tbody);
+  box.append(table);
+
+  const m = dealMatrix(session.hands, ids);
+  if (m.flat().some((n) => n > 0)) {
+    const h = document.createElement('h3');
+    h.textContent = '邊個出銃俾邊個';
+    const mt = document.createElement('table');
+    const head = ['出銃 ↓ ／ 食糊 →', ...ids.map(nameOf)];
+    mt.innerHTML = `<thead><tr>${head.map((t) => `<th>${t}</th>`).join('')}</tr></thead>`;
+    const mb = document.createElement('tbody');
+    ids.forEach((id, i) => {
+      const tr = document.createElement('tr');
+      const th = document.createElement('td');
+      th.textContent = nameOf(id);
+      tr.append(th);
+      ids.forEach((_, j) => {
+        const td = document.createElement('td');
+        td.textContent = i === j ? '—' : m[i][j] || '·';
+        if (m[i][j] > 0) td.className = 'neg';
+        tr.append(td);
+      });
+      mb.append(tr);
+    });
+    mt.append(mb);
+    box.append(h, mt);
+  }
+}
+
+function setTab(next) {
+  $('panelLog').hidden = next !== 'log';
+  $('panelStats').hidden = next !== 'stats';
+  for (const b of document.querySelectorAll('.tab')) {
+    b.classList.toggle('on', b.dataset.tab === next);
+    b.setAttribute('aria-selected', String(b.dataset.tab === next));
+  }
+}
+
+/* ── sheet ── */
+
+function closeSheet() {
+  $('scrim').hidden = true;
+  $('sheet').innerHTML = '';
+}
+
+function openSheet(title, sub, build) {
+  const sheet = $('sheet');
+  sheet.innerHTML = '';
+  const h = document.createElement('h3');
+  h.textContent = title;
+  const p = document.createElement('p');
+  p.className = 'sub';
+  p.textContent = sub;
+  sheet.append(h, p);
+  build(sheet);
+  const cancel = document.createElement('button');
+  cancel.className = 'cancel';
+  cancel.textContent = '收埋';
+  cancel.onclick = closeSheet;
+  sheet.append(cancel);
+  $('scrim').hidden = false;
+  sheet.scrollTop = 0;
+}
+
+function optionButton(label, note, primary) {
+  const b = document.createElement('button');
+  b.className = `opt${primary ? ' primary' : ''}`;
+  b.textContent = label;
+  if (note) {
+    const s = document.createElement('small');
+    s.textContent = note;
+    b.append(s);
+  }
+  return b;
+}
+
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.hidden = false;
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => { t.hidden = true; }, 2600);
+}
+
+/* ── 記一鋪牌：撳贏家 → 點食 → 幾多番 ── */
+
+function pickHow(winner) {
+  const who = nameOf(session.seats[winner]);
+  openSheet(`${who} 食糊`, '點食？', (sheet) => {
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    const self = optionButton('自摸', '三家各畀', true);
+    self.onclick = () => pickScore(winner, 'selfDraw');
+    grid.append(self);
+    for (let s = 0; s < 4; s++) {
+      if (s === winner) continue;
+      const b = optionButton(nameOf(session.seats[s]), '出銃');
+      b.onclick = () => pickScore(winner, s);
+      grid.append(b);
+    }
+    sheet.append(grid);
+
+    const rename = document.createElement('button');
+    rename.className = 'cancel';
+    rename.textContent = `改名（${who}）`;
+    rename.onclick = () => pickName(winner);
+    sheet.append(rename);
+  });
+}
+
+function pickScore(winner, from) {
+  const v = variant();
+  const who = nameOf(session.seats[winner]);
+  const how = from === 'selfDraw' ? '自摸' : `食 ${nameOf(session.seats[from])}`;
+  const options = v.scoreOptions(session.config, { winner, from, round: session.round });
+
+  openSheet(`${who} ${how}`, v.scorePrompt, (sheet) => {
+    const grid = document.createElement('div');
+    grid.className = 'grid four';
+    for (const opt of options) {
+      const b = optionButton(opt.label, opt.note);
+      if (options.length > 12) b.classList.add('tight');
+      b.onclick = () =>
+        record([{ kind: 'win', winner, from, score: opt.score }], `${who} ${how} ${opt.label}`);
+      grid.append(b);
+    }
+    sheet.append(grid);
+  });
+}
+
+function pickName(seat) {
+  const pid = session.seats[seat];
+  openSheet('改名', `${nameOf(pid)} → ？　改完之前記低嘅牌唔會變。`, (sheet) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = nameOf(pid);
+    input.maxLength = 12;
+    sheet.append(input);
+    const row = document.createElement('div');
+    row.className = 'row';
+    const ok = optionButton('改', null, true);
+    const go = () => {
+      const name = input.value.trim();
+      if (!name) return;
+      session = renamePlayer(session, pid, name);
+      closeSheet();
+      render();
+      toast(`改咗名做「${name}」，歷史數字冇變`);
+    };
+    ok.onclick = go;
+    input.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+    row.append(ok);
+    sheet.append(row);
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
+/* ── 骰仔 ── */
+
+function throwDice() {
+  const roller = dealerSeat(session.round);
+  lastRoll = rollDice(roller, session.diceCount);
+  render();
+  toast(`${nameOf(session.seats[roller])} 擲到 ${lastRoll.total} → ${nameOf(session.seats[lastRoll.landsOn])}`);
+}
+
+/* ── 設定 ── */
+
+function openSettings() {
+  openSheet('設定', '呢啲改動唔會影響已經記低嘅牌。', (sheet) => {
+    const grid = document.createElement('div');
+    grid.className = 'grid two';
+
+    const rules = optionButton('玩法同賠率', session.presetName);
+    rules.onclick = () => openRuleEditor();
+
+    const dice = optionButton(`骰子 ${session.diceCount} 粒`, '撳一下轉 2／3 粒');
+    dice.onclick = () => {
+      session = { ...session, diceCount: session.diceCount === 3 ? 2 : 3 };
+      lastRoll = null;
+      closeSheet();
+      render();
+      toast(`轉咗做 ${session.diceCount} 粒骰`);
+    };
+
+    const seats = optionButton('換位', '兩個位對調');
+    seats.onclick = () => pickSwap();
+
+    const sub = optionButton('換人', '有人走，新人頂上');
+    sub.onclick = () => pickSubstitute();
+
+    const dealer = optionButton('莊家設定', '人手改圈同局');
+    dealer.onclick = () => pickRound();
+
+    const draw = optionButton(
+      session.config.dealerContinuesOnDraw ? '流局：連莊' : '流局：落莊',
+      '撳一下轉',
+    );
+    draw.onclick = () => {
+      session = {
+        ...session,
+        config: { ...session.config, dealerContinuesOnDraw: !session.config.dealerContinuesOnDraw },
+      };
+      closeSheet();
+      render();
+      toast(`流局改咗做${session.config.dealerContinuesOnDraw ? '連莊' : '落莊'}`);
+    };
+
+    const exp = optionButton('匯出 CSV', '攞去 Excel 對數');
+    exp.onclick = () => exportCSV();
+
+    const fresh = optionButton('新牌局', '分數清零');
+    fresh.onclick = () => confirmReset();
+
+    grid.append(rules, dice, seats, sub, dealer, draw, exp, fresh);
+    sheet.append(grid);
+  });
+}
+
+/**
+ * 玩法同賠率編輯器。
+ *
+ * 重點喺「大細」嗰行：唔係叫人填基數（冇人心目中係諗基數），
+ * 而係揀一個番數講「呢個番數打幾大」，其餘成張表按級距自動跳。
+ * 跳完即刻 render 返成張表——除唔盡會有出入，一定要俾人見到。
+ */
+function openRuleEditor() {
+  let draft = { ...session.config };
+  let presetName = session.presetName;
+  let anchorFaan = Math.min(draft.maxFaan, Math.max(draft.minFaan, draft.maxFaan));
+
+  function build() {
+    openSheet('玩法同賠率', '揀個現成玩法，或者自己調。改咗即刻見到成張賠率表。', (sheet) => {
+      const markCustom = () => { presetName = CUSTOM; };
+
+      // ── 現成玩法 ──
+      const presetField = document.createElement('div');
+      presetField.className = 'field';
+      presetField.innerHTML = '<label>現成玩法</label>';
+      const presetGrid = document.createElement('div');
+      presetGrid.className = 'grid two';
+      for (const [name, cfg] of Object.entries(variant().presets)) {
+        const b = optionButton(name, null);
+        b.classList.add('tight');
+        if (presetName === name) b.classList.add('on');
+        b.onclick = () => {
+          draft = { ...cfg };
+          presetName = name;
+          anchorFaan = draft.maxFaan;
+          build();
+        };
+        presetGrid.append(b);
+      }
+      presetField.append(presetGrid);
+      sheet.append(presetField);
+
+      // ── 逐項調 ──
+      const chooser = (label, values, current, onPick, fmtLabel = String) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'field';
+        wrap.innerHTML = `<label>${label}</label>`;
+        const g = document.createElement('div');
+        g.className = 'grid';
+        for (const v of values) {
+          const b = optionButton(fmtLabel(v), null);
+          b.classList.add('tight');
+          if (v === current) b.classList.add('on');
+          b.onclick = () => { onPick(v); markCustom(); build(); };
+          g.append(b);
+        }
+        wrap.append(g);
+        sheet.append(wrap);
+      };
+
+      chooser('起糊番數', [1, 2, 3, 4, 5], draft.minFaan, (v) => {
+        draft.minFaan = v;
+        if (draft.maxFaan < v) draft.maxFaan = v;
+        if (anchorFaan < v || anchorFaan > draft.maxFaan) anchorFaan = draft.maxFaan;
+      }, (v) => `${v}番`);
+
+      chooser('封頂番數', MAX_FAAN_CHOICES, draft.maxFaan, (v) => {
+        draft.maxFaan = v;
+        if (anchorFaan > v) anchorFaan = v;
+      }, (v) => `${v}番`);
+
+      chooser('級距', ['half', 'full'], draft.scale,
+        (v) => { draft.scale = v; },
+        (v) => (v === 'half' ? '半辣上' : '辣辣上'));
+
+      chooser('找數', ['full', 'half'], draft.liability,
+        (v) => { draft.liability = v; },
+        (v) => (v === 'full' ? '全銃' : '半銃'));
+
+      // ── 大細 ──
+      const problem = validateConfig(draft);
+      const stake = document.createElement('div');
+      stake.className = 'field';
+      stake.innerHTML = '<label>大細　—　揀一個番數，話我知佢個基數幾多</label>';
+
+      if (!problem) {
+        const anchorRow = document.createElement('div');
+        anchorRow.className = 'anchor';
+
+        const sel = document.createElement('select');
+        sel.setAttribute('aria-label', '用邊個番數做基準');
+        for (let f = draft.minFaan; f <= draft.maxFaan; f++) {
+          const o = document.createElement('option');
+          o.value = String(f);
+          o.textContent = `${f}番`;
+          if (f === anchorFaan) o.selected = true;
+          sel.append(o);
+        }
+        const amountInput = document.createElement('input');
+        amountInput.type = 'number';
+        amountInput.min = '1';
+        amountInput.inputMode = 'numeric';
+        amountInput.setAttribute('aria-label', '打幾大');
+        amountInput.value = String(unitFor(anchorFaan, draft));
+
+        const apply = () => {
+          const amount = Number(amountInput.value);
+          if (!Number.isFinite(amount) || amount <= 0) return;
+          try {
+            draft.base = baseForAnchor(anchorFaan, amount, draft);
+            markCustom();
+            build();
+          } catch { /* 輸入未完整，唔好嘈 */ }
+        };
+        sel.onchange = () => { anchorFaan = Number(sel.value); build(); };
+        amountInput.onchange = apply;
+        amountInput.onkeydown = (e) => { if (e.key === 'Enter') apply(); };
+
+        anchorRow.append(sel, amountInput);
+        stake.append(anchorRow);
+
+        const quick = document.createElement('div');
+        quick.className = 'row';
+        const half = optionButton('細一半', null);
+        const dbl = optionButton('大一倍', null);
+        half.classList.add('tight');
+        dbl.classList.add('tight');
+        half.onclick = () => { draft.base = Math.max(1, Math.round(draft.base / 2)); markCustom(); build(); };
+        dbl.onclick = () => { draft.base *= 2; markCustom(); build(); };
+        quick.append(half, dbl);
+        stake.append(quick);
+      }
+      sheet.append(stake);
+
+      // ── 賠率表 ──
+      if (problem) {
+        const w = document.createElement('p');
+        w.className = 'warn-line';
+        w.textContent = problem;
+        sheet.append(w);
+      } else {
+        const wrap = document.createElement('div');
+        wrap.className = 'rate-wrap';
+        const head = document.createElement('div');
+        head.className = 'rate-head';
+        head.textContent = '賠率表';
+        const t = document.createElement('table');
+        t.className = 'rates';
+        t.innerHTML = '<thead><tr><th>番數</th><th>基數</th><th>出銃收</th><th>自摸收</th></tr></thead>';
+        const tb = document.createElement('tbody');
+        for (const { faan, unit } of unitTable(draft)) {
+          const tr = document.createElement('tr');
+          if (faan === anchorFaan) tr.className = 'anchor-row';
+          for (const text of [`${faan}番`, String(unit), String(4 * unit), String(6 * unit)]) {
+            const td = document.createElement('td');
+            td.textContent = text;
+            tr.append(td);
+          }
+          tb.append(tr);
+        }
+        t.append(tb);
+        wrap.append(head, t);
+        sheet.append(wrap);
+
+        const note = document.createElement('p');
+        note.className = 'note-line';
+        note.textContent = draft.liability === 'full'
+          ? '全銃：出銃者一人畀晒。自摸三家各畀一份。'
+          : '半銃：出銃者畀雙份，其餘兩家各一份。自摸三家各畀一份。';
+        sheet.append(note);
+      }
+
+      // ── 用呢個 ──
+      const row = document.createElement('div');
+      row.className = 'row';
+      const started = session.hands.length > 0;
+      const ok = optionButton(
+        started ? '用呢個開新牌局' : '就用呢個',
+        started ? '而家啲分會清零' : null,
+        true,
+      );
+      if (problem) { ok.disabled = true; ok.style.opacity = '.45'; }
+      ok.onclick = () => {
+        if (problem) return;
+        const keep = session.roster;
+        const seats = session.seats;
+        session = newSession(presetName, session.diceCount, { ...draft });
+        session.presetName = presetName;
+        session.roster = keep;
+        session.seats = seats;
+        lastRoll = null;
+        closeSheet();
+        render();
+        toast(`開咗新牌局：${presetName}`);
+      };
+      row.append(ok);
+      sheet.append(row);
+    });
+  }
+
+  build();
+}
+
+function pickSwap() {
+  openSheet('換位', '揀兩個位對調。之前記低嘅牌會保留原本嘅座位。', (sheet) => {
+    const chosen = [];
+    const grid = document.createElement('div');
+    grid.className = 'grid two';
+    for (let s = 0; s < 4; s++) {
+      const seat = s;
+      const b = optionButton(nameOf(session.seats[seat]), `${WIND_NAMES[playerWind(seat, session.round)]}家`);
+      b.onclick = () => {
+        if (chosen.includes(seat)) return;
+        chosen.push(seat);
+        b.classList.add('primary');
+        if (chosen.length === 2) {
+          session = swapSeats(session, chosen[0], chosen[1]);
+          lastRoll = null;
+          closeSheet();
+          render();
+          toast('換咗位');
+        }
+      };
+      grid.append(b);
+    }
+    sheet.append(grid);
+  });
+}
+
+function pickSubstitute() {
+  openSheet('換人', '邊個走？之前佢打嗰幾鋪嘅數會凍結，唔會跟住新人走。', (sheet) => {
+    const grid = document.createElement('div');
+    grid.className = 'grid two';
+    for (let s = 0; s < 4; s++) {
+      const seat = s;
+      const b = optionButton(nameOf(session.seats[seat]), `${WIND_NAMES[playerWind(seat, session.round)]}家`);
+      b.onclick = () => pickSubstituteName(seat);
+      grid.append(b);
+    }
+    sheet.append(grid);
+  });
+}
+
+function pickSubstituteName(seat) {
+  const outgoing = nameOf(session.seats[seat]);
+  openSheet('換人', `${outgoing} 走咗，邊個頂上？`, (sheet) => {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = '新玩家個名';
+    input.maxLength = 12;
+    sheet.append(input);
+    const row = document.createElement('div');
+    row.className = 'row';
+    const ok = optionButton('頂上', null, true);
+    const go = () => {
+      const name = input.value.trim();
+      if (!name) return;
+      // 新 id，唔會同走咗嗰個撈亂——所以兩個人嘅統計分得開
+      const id = `p${Date.now().toString(36)}`;
+      session = substitutePlayer(session, seat, { id, name });
+      lastRoll = null;
+      closeSheet();
+      render();
+      toast(`${name} 頂咗 ${outgoing}，${outgoing} 之前嘅數凍結咗`);
+    };
+    ok.onclick = go;
+    input.onkeydown = (e) => { if (e.key === 'Enter') go(); };
+    row.append(ok);
+    sheet.append(row);
+    setTimeout(() => input.focus(), 50);
+  });
+}
+
+function pickRound() {
+  openSheet('莊家設定', '記漏咗或者搞錯咗？直接跳去啱嘅圈同局。', (sheet) => {
+    const grid = document.createElement('div');
+    grid.className = 'grid four';
+    for (let pw = 0; pw < 4; pw++) {
+      for (let hw = 0; hw < 4; hw++) {
+        const b = optionButton(`${WIND_NAMES[pw]}圈${WIND_NAMES[hw]}風`, null);
+        b.classList.add('tight');
+        b.onclick = () => {
+          session = { ...session, round: setRound(session.round, { prevailingWind: pw, handWind: hw }) };
+          lastRoll = null;
+          closeSheet();
+          render();
+          toast(`跳咗去 ${roundLabel(session.round)}`);
+        };
+        grid.append(b);
+      }
+    }
+    sheet.append(grid);
+  });
+}
+
+function confirmReset() {
+  openSheet('新牌局', '而家嘅分數同紀錄會冇晒。玩法、名同座位會保留。', (sheet) => {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const ok = optionButton('開新牌局', null, true);
+    ok.onclick = () => {
+      const keep = session.roster;
+      const seats = session.seats;
+      const name = session.presetName;
+      session = newSession(name, session.diceCount, { ...session.config });
+      session.presetName = name;
+      session.roster = keep;
+      session.seats = seats;
+      lastRoll = null;
+      closeSheet();
+      render();
+      toast('開咗新牌局');
+    };
+    row.append(ok);
+    sheet.append(row);
+  });
+}
+
+function exportCSV() {
+  const csv = toCSV(session.hands, nameOf);
+  closeSheet();
+  if (!csv.includes('\n')) {
+    toast('未有牌可以匯出');
+    return;
+  }
+  navigator.clipboard?.writeText(csv).then(
+    () => toast('已經 copy 咗去剪貼簿'),
+    () => toast('copy 唔到，請自己 select 個紀錄'),
+  );
+}
+
+/* ── 落數 ── */
+
+function record(events, label) {
+  try {
+    session = appendHand(session, events, variant().settle);
+    lastRoll = null;
+    closeSheet();
+    render();
+    toast(label);
+  } catch (err) {
+    toast(`記唔到：${err.message}`);
+  }
+}
+
+/* ── 綁 ── */
+
+for (let seat = 0; seat < 4; seat++) {
+  $(`seat${seat}`).onclick = () => pickHow(seat);
+}
+
+$('drawBtn').onclick = () => record([{ kind: 'draw' }], '流局');
+$('diceBtn').onclick = throwDice;
+$('settings').onclick = openSettings;
+
+$('undo').onclick = () => {
+  const last = session.hands[session.hands.length - 1];
+  if (!last) return;
+  const label = describe(last);
+  session = undoLastHand(session);
+  lastRoll = null;
+  render();
+  toast(`還原咗：${label}`);
+};
+
+$('scrim').onclick = (e) => { if (e.target === $('scrim')) closeSheet(); };
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeSheet(); });
+
+for (const b of document.querySelectorAll('.tab')) {
+  b.onclick = () => setTab(b.dataset.tab);
+}
+
+/* ── 加到主畫面 ──
+   Android/Chrome 會自己彈 install prompt；iOS 冇，要人手教。
+   兩邊都係喺 http(s) 先有意思——直接開個檔案唔使裝。 */
+function setupInstallHint() {
+  const bar = $('a2hs');
+  if (!bar) return;
+  const DISMISSED = 'mahjong.a2hs.dismissed';
+  const standalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  let dismissed = false;
+  try { dismissed = localStorage.getItem(DISMISSED) === '1'; } catch { /* 私隱模式 */ }
+  if (standalone || dismissed || !location.protocol.startsWith('http')) return;
+
+  // navigator.standalone 淨係 Safari 有——用嚟分開「真 iPad」同「有觸控嘅 Mac」
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && 'standalone' in navigator);
+  let deferred = null;
+
+  const show = (html) => {
+    bar.innerHTML = '';
+    const text = document.createElement('span');
+    text.innerHTML = html;
+    const close = document.createElement('button');
+    close.textContent = '唔使';
+    close.onclick = () => {
+      bar.hidden = true;
+      try { localStorage.setItem(DISMISSED, '1'); } catch { /* 算 */ }
+    };
+    bar.append(text, close);
+    bar.hidden = false;
+  };
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferred = e;
+    show('<b>加到主畫面</b>　用起上嚟同 app 一樣，離線都得。');
+    const add = document.createElement('button');
+    add.textContent = '加';
+    add.onclick = async () => {
+      bar.hidden = true;
+      deferred.prompt();
+      await deferred.userChoice;
+      deferred = null;
+    };
+    bar.insertBefore(add, bar.lastChild);
+  });
+
+  if (isIOS) {
+    show('<b>加到主畫面</b>　撳底下個「分享」掣 → 加至主畫面，之後開起上嚟就冇咗個網址列。');
+  }
+}
+setupInstallHint();
+
+/* 放上網之後可以離線用。file:// 開嗰陣冇 service worker，
+   但嗰陣個檔案本身已經喺部機度，一樣離線行到。 */
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+/* 打牌時個 mon 熄咗要重新撳，好煩 */
+if ('wakeLock' in navigator) {
+  const keepAwake = () => navigator.wakeLock.request('screen').catch(() => {});
+  keepAwake();
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') keepAwake();
+  });
+}
+
+/* ── 開波 ── */
+session = load() ?? newSession(firstPreset());
+setTab('log');
+render();
+if (session.hands.length > 0) toast(`接返上次：打咗 ${session.hands.length} 鋪`);
+
+</script>
+</body>
+</html>
