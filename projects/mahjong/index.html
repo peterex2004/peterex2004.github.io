@@ -63,11 +63,12 @@ html {
   overscroll-behavior: none;
 }
 body {
-  /* 100vh 喺 iOS Safari 會計埋工具列，撞到個底。
-     svh = 工具列出晒嗰陣嘅高度，所以永遠唔會被遮，亦唔會跟住工具列跳。 */
-  height: 100vh;
-  height: 100svh;
-  overscroll-behavior: none;
+  /* 100vh 喺 iOS Safari 會計埋工具列，撞到個底，所以用 svh 做最低高度。
+     用 min-height 唔用 height：紀錄多嗰陣要俾成頁郁得，唔係鎖死喺一個
+     螢幕度——之前鎖死咗，紀錄得返好少位，仲 scroll 唔到上去睇。 */
+  min-height: 100vh;
+  min-height: 100svh;
+  overscroll-behavior-y: none; /* 淨係擋落拉刷新，唔會擋正常 scroll */
   margin: 0;
   background: var(--bg);
   color: var(--ink);
@@ -76,7 +77,6 @@ body {
   flex-direction: column;
   -webkit-user-select: none;
   user-select: none;
-  overflow: hidden;
 }
 button { font: inherit; cursor: pointer; color: inherit; }
 button:active:not(:disabled) { transform: translateY(1px); }
@@ -278,7 +278,18 @@ main {
 }
 
 /* ══ tabs + panels ══ */
-.tabs { display: flex; background: var(--surface); border-top: 1px solid var(--rule); }
+.tabs {
+  display: flex;
+  background: var(--surface);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+  /* 成頁 scroll 落去嗰陣黐喺頂，隨時換 tab；加返少少頂邊距
+     頂住個瀏海／狀態列，因為呢排掣有機會黐到最頂。 */
+  position: sticky;
+  top: 0;
+  padding-top: env(safe-area-inset-top);
+  z-index: 5;
+}
 .tab {
   flex: 1; border: none; background: none; padding: .7rem;
   min-height: 2.75rem;
@@ -287,15 +298,32 @@ main {
 }
 .tab.on { color: var(--ink); border-bottom-color: var(--accent); }
 .panel {
-  flex: 1 1 auto;
   background: var(--surface);
-  overflow-y: auto;
-  min-height: 3.5rem;
-  /* 底部 home indicator */
-  padding-bottom: env(safe-area-inset-bottom);
-  -webkit-overflow-scrolling: touch;
+  /* 唔再靠「剩返幾多位」嚟決定紀錄畀幾多位——夠一個screen高，
+     紀錄少都唔會迫住，紀錄多就成頁自然拉長，scroll 落去睇晒。 */
+  min-height: 60svh;
+  padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 }
 .panel[hidden] { display: none !important; }
+
+/* ── 詳細紀錄：工具列（睇邊種、順序） ── */
+.log-toolbar {
+  display: flex;
+  gap: .5rem;
+  padding: .55rem .95rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border-bottom: 1px solid var(--rule);
+}
+/* class 嘅 display:flex specificity 贏 [hidden] 個 UA 預設，要自己補一條先真係隱藏得到
+   ——同 .panel[hidden] / .dice[hidden] 果個坑一樣。 */
+.log-toolbar[hidden] { display: none !important; }
+.seg { display: flex; background: var(--surface-2); border-radius: 9px; padding: 2px; gap: 2px; }
+.seg button {
+  border: none; background: transparent; padding: .34rem .62rem; border-radius: 7px;
+  font-size: .74rem; font-weight: 600; color: var(--muted); min-height: 1.9rem;
+}
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px var(--shadow); }
 
 .log-list { list-style: none; margin: 0; padding: 0; }
 .log-list li {
@@ -312,8 +340,68 @@ main {
 .log-list .amt { font-variant-numeric: tabular-nums; font-weight: 600; }
 .log-list li.empty { display: block; padding: 1rem .95rem; color: var(--muted); font-size: .8rem; text-align: center; }
 
+/* 「分數」view：一鋪一橫排，四個位各自嘅呢鋪／累計 */
+.log-list li.score-row {
+  display: block;
+  padding: .5rem .95rem;
+}
+.score-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem; text-align: center; }
+.score-grid .cell .delta { font-size: .84rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.score-grid .cell .cum { font-size: .67rem; color: var(--muted); font-variant-numeric: tabular-nums; margin-top: .05rem; }
+.score-grid .cell .delta.zero, .score-grid .cell .cum { color: var(--muted); }
+.score-meta {
+  display: flex; justify-content: space-between; gap: .5rem;
+  font-size: .68rem; color: var(--muted); margin-bottom: .3rem;
+}
+.score-legend {
+  /* 冇做 sticky——同 tabs 疊埋一齊要計安全區高度，喺唔同機仔會唔啱位。
+     淨係俾個 tabs sticky 已經夠用（隨時換 tab），呢個 legend 一齊 scroll 走得。 */
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem;
+  padding: .5rem .95rem; font-size: .68rem; color: var(--muted); text-align: center;
+  border-bottom: 1px solid var(--rule);
+  background: var(--surface);
+}
+.log-list li.round-divider {
+  /* .log-list li 個 grid（class+element，specificity 贏單一個 class）
+     會將呢個得一嚿文字嘅 <li> 谷去第一格 1.5rem 闊，中文冇字距
+     就逐隻字換行——同之前 empty-state 嗰個坑一樣，要用返 display:block 頂走。 */
+  display: block;
+  padding: .4rem .95rem;
+  font-size: .68rem; font-weight: 700; color: var(--accent);
+  background: var(--surface-2); letter-spacing: .03em;
+}
+
+/* ── 統計數據：卡片 ── */
 #stats { padding: .5rem .95rem .9rem; }
 .stat-summary { margin: 0 0 .6rem; font-size: .76rem; color: var(--muted); }
+.stat-top { display: flex; justify-content: flex-end; margin-bottom: .5rem; }
+.stat-top button {
+  border: 1px solid var(--rule); background: var(--surface); border-radius: 9px;
+  padding: .4rem .7rem; font-size: .78rem; font-weight: 600; min-height: 2.4rem;
+}
+.stat-cards { display: flex; flex-direction: column; gap: .6rem; }
+.stat-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; padding: .75rem .9rem; }
+.stat-card-head { display: flex; align-items: center; gap: .5rem; }
+.stat-avatar { font-size: 1.3rem; line-height: 1; }
+.stat-rank { font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.stat-name {
+  font-weight: 700; font-size: .92rem; flex: 1; min-width: 0;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.stat-badge {
+  font-size: .68rem; font-weight: 600; padding: .22rem .58rem; border-radius: 999px;
+  background: var(--surface-2); color: var(--muted); white-space: nowrap; flex-shrink: 0;
+}
+.stat-badge.top { background: rgba(176,138,46,.18); color: var(--gold); }
+.stat-card-body {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem;
+  margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--rule);
+}
+.stat-cell { text-align: center; position: relative; }
+.stat-cell .n { font-size: 1.18rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-cell .lbl { font-size: .68rem; color: var(--muted); margin-top: .1rem; }
+.stat-crown { position: absolute; top: -1.1rem; left: 50%; transform: translateX(-50%); font-size: .8rem; }
+
 #stats table { width: 100%; border-collapse: collapse; font-size: .76rem; font-variant-numeric: tabular-nums; }
 #stats th { text-align: right; font-weight: 600; color: var(--muted); font-size: .67rem; padding: .28rem .22rem; border-bottom: 1px solid var(--rule); }
 #stats th:first-child, #stats td:first-child { text-align: left; }
@@ -325,12 +413,18 @@ main {
 
 /* ══ 打橫用 ══ */
 @media (orientation: landscape) and (max-height: 34rem) {
-  /* flex-wrap 限制唔到第二行嘅高度，用 grid 先鎖得住 */
+  /* 打橫個螢幕矮，成頁 scroll 反而唔啱用——照舊鎖死一個 screen，
+     紀錄靠 .panel 自己嗰嚿 scroll。flex-wrap 限制唔到第二行嘅高度，
+     所以要用 grid 先鎖得住。 */
   body {
     display: grid;
     grid-template-columns: 52fr 44fr;
     grid-template-rows: auto auto minmax(0, 1fr);
+    min-height: 100svh;
+    height: 100svh;
+    overflow: hidden;
   }
+  .tabs { position: static; padding-top: 0; }
   header { grid-column: 1 / -1; grid-row: 1;
            padding-top: calc(.4rem + env(safe-area-inset-top)); padding-bottom: .35rem; }
   .a2hs { grid-column: 1 / -1; grid-row: 2; }
@@ -344,7 +438,13 @@ main {
   .side { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
   .actions { padding-top: .45rem; padding-bottom: .45rem; }
   .act { min-height: 2.75rem; padding: .5rem; }
-  .panel { min-height: 0; }
+  .panel {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
 /* ══ 加到主畫面提示 ══ */
@@ -445,6 +545,68 @@ input[type=text], input[type=number] {
 .anchor select { flex: 0 0 6.2rem; }
 .anchor input { flex: 1; min-width: 0; }
 
+/* ── 轉盤（記一鋪牌用）── */
+.wheel-row { display: flex; gap: .6rem; margin-top: .9rem; }
+.wheel-col { flex: 1; min-width: 0; }
+.wheel-col-label {
+  font-size: .72rem; color: var(--muted); font-weight: 600;
+  text-align: center; margin-bottom: .35rem;
+}
+.wheel-frame { position: relative; border-radius: 12px; overflow: hidden; }
+.wheel-band {
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+  height: 2.5rem; background: var(--surface-2); border-radius: 10px;
+  pointer-events: none; z-index: 0;
+}
+.wheel-frame::before, .wheel-frame::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 2.1rem; z-index: 2; pointer-events: none;
+}
+.wheel-frame::before { top: 0; background: linear-gradient(var(--bg), transparent); }
+.wheel-frame::after { bottom: 0; background: linear-gradient(transparent, var(--bg)); }
+.wheel {
+  position: relative; z-index: 1;
+  height: 12.5rem; /* 5 行 × 2.5rem */
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.wheel::-webkit-scrollbar { display: none; }
+.wheel-item {
+  height: 2.5rem;
+  scroll-snap-align: center;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--muted); font-size: 1rem; font-variant-numeric: tabular-nums;
+}
+.wheel-item.on { color: var(--ink); font-weight: 700; font-size: 1.18rem; }
+
+.wheel-preview { text-align: center; margin: 1.1rem 0 0; font-size: .82rem; color: var(--muted); }
+.wheel-preview b {
+  display: block; font-size: 1.55rem; color: var(--accent);
+  font-variant-numeric: tabular-nums; margin-top: .18rem;
+}
+
+/* ── 開關（包自摸嗰啲用）── */
+.switch-row {
+  display: flex; align-items: center; justify-content: space-between; gap: .6rem;
+  margin-top: .9rem; padding: .7rem .8rem;
+  background: var(--surface); border: 1px solid var(--rule); border-radius: 12px;
+}
+.switch-row .switch-text { min-width: 0; }
+.switch-row .switch-label { font-size: .87rem; font-weight: 600; }
+.switch-row .switch-hint { font-size: .71rem; color: var(--muted); margin-top: .1rem; line-height: 1.4; }
+.switch {
+  position: relative; width: 2.75rem; height: 1.65rem; flex-shrink: 0;
+  border-radius: 999px; background: var(--rule); border: none; padding: 0;
+}
+.switch::after {
+  content: ''; position: absolute; top: 2px; left: 2px; width: 1.4rem; height: 1.4rem;
+  background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.35);
+  transition: transform .15s ease;
+}
+.switch.on { background: var(--accent); }
+.switch.on::after { transform: translateX(1.1rem); }
+
 /* 賠率表 */
 .rate-wrap { margin-top: .8rem; border: 1px solid var(--rule); border-radius: 11px; overflow: hidden; background: var(--surface); }
 .rate-head { padding: .45rem .7rem; background: var(--surface-2); font-size: .7rem; color: var(--muted); font-weight: 600; }
@@ -507,7 +669,10 @@ table.rates tr.anchor-row td { background: rgba(176,138,46,.14); }
   <button class="tab" data-tab="stats" role="tab" aria-selected="false">統計數據</button>
 </nav>
 
-<section class="panel" id="panelLog"><ol class="log-list" id="log"></ol></section>
+<section class="panel" id="panelLog">
+  <div class="log-toolbar" id="logToolbar"></div>
+  <ol class="log-list" id="log"></ol>
+</section>
 <section class="panel" id="panelStats" hidden><div id="stats"></div></section>
 </div>
 
@@ -577,8 +742,15 @@ const WIND_NAMES = ['東', '南', '西', '北']         ;
  * S = 該玩法嘅計分輸入（香港係 { faan }，台灣係 { tai }，日麻係 { han, fu }）。
  */
                           
-                                           
-                                                                    
+     
+                                       
+    
+                                   
+                                         
+                                 
+                                  
+     
+                                                                                
                                
                                      
                      
@@ -834,7 +1006,19 @@ function applyEvent(
       // 玩家填幾多就係幾多。引擎唔會加、唔會推算——見 HKScore 嘅註解。
       const unit = unitFor(ev.score.faan, config);
 
-      if (selfDraw) {
+      if (ev.pao !== undefined && !selfDraw) {
+        throw new RangeError('包自摸淨係自摸至用得，出銃嗰鋪唔啱用');
+      }
+      if (ev.pao === ev.winner) {
+        throw new RangeError('包自摸嘅人唔可以係贏家自己');
+      }
+
+      if (selfDraw && ev.pao !== undefined) {
+        // 包自摸：贏家收嘅總數同三家自摸一樣（6 份），
+        // 淨係唔洗三家分擔，一個人孭晒。
+        deltas[ev.pao] -= 6 * unit;
+        deltas[ev.winner] += 6 * unit;
+      } else if (selfDraw) {
         // 自摸：三家各畀兩份（兩制相同）
         for (const s of otherSeats(ev.winner)) {
           deltas[s] -= 2 * unit;
@@ -1295,7 +1479,7 @@ const __m_stats = (() => {
  * 全部由同一條事件序列 derive，唔會另外存——所以永遠唔會同分數唔同步。
  */
 
-                                                       
+                                                               
 
                            
                
@@ -1413,7 +1597,54 @@ function sessionStats   (hands           )
   return { hands: hands.length, draws, selfDraws, longestStreak };
 }
 
-return { playerStats, dealMatrix, sessionStats };
+/**
+ * 逐鋪嘅累計。第 i 個係打完第 i 鋪之後嘅四座位總數。
+ *
+ * 俾「詳細紀錄」個「分數」view 用——每行想同時見到嗰鋪贏輸幾多同埋
+ * 打到嗰陣嘅總數，唔使自己逐行加返轉頭。
+ */
+function runningTotals   (hands           )           {
+  const out           = [];
+  const cum         = [0, 0, 0, 0];
+  for (const hand of hands) {
+    for (const s of [0, 1, 2, 3]          ) cum[s] += hand.deltas[s];
+    out.push([...cum]          );
+  }
+  return out;
+}
+
+/**
+ * 逐鋪嘅累計，但跟**人**唔跟**座位**。
+ *
+ * 分別喺邊度：座位每圈都轉、換位換人隨時發生，`runningTotals()` 果啲
+ * 數字跟住座位走，唔啱用嚟畫「邊個個人走勢」。呢個先啱——四條線
+ * 永遠代表同一個人，唔會因為佢轉咗風位就跳去第條線。
+ *
+ * 未落場（換人入嚟之前）嗰幾鋪，個人嘅數保持喺入場前一刻嘅總數。
+ */
+function playerRunningTotals   (
+  hands           ,
+  playerIds            ,
+)             {
+  const totals = playerIds.map(() => 0);
+  const out             = [];
+  for (const hand of hands) {
+    playerIds.forEach((id, i) => {
+      const seat = hand.seats.indexOf(id);
+      if (seat !== -1) totals[i] += hand.deltas[seat        ];
+    });
+    out.push([...totals]);
+  }
+  return out;
+}
+
+/** 呢鋪牌入面，指定嘅人打咗嗰個位，收咗／輸咗幾多。冇落場就 null。 */
+function playerDeltaInHand   (hand         , playerId          )                {
+  const seat = hand.seats.indexOf(playerId);
+  return seat === -1 ? null : hand.deltas[seat        ] ;
+}
+
+return { playerStats, dealMatrix, sessionStats, runningTotals, playerRunningTotals, playerDeltaInHand };
 })();
 
 const __m_storage = (() => {
@@ -1618,7 +1849,7 @@ const { WIND_NAMES } = __m_types;
 const { initialRound, dealerSeat, playerWind, roundLabel, consecutiveLabel, setRound, advance } = __m_round;
 const { seatTotals, playerTotal, appendHand, undoLastHand, renamePlayer, swapSeats, substitutePlayer } = __m_session;
 const { rollDice } = __m_dice;
-const { playerStats, dealMatrix, sessionStats } = __m_stats;
+const { playerStats, dealMatrix, sessionStats, playerRunningTotals, playerDeltaInHand } = __m_stats;
 const { serialize, deserialize, toCSV } = __m_storage;
 const { VARIANTS, variantById, variantOfPreset } = __m_variant;
 const { unitFor, unitTable, baseForAnchor, validateConfig, MAX_FAAN_CHOICES } = __m_hk;
@@ -1631,6 +1862,9 @@ const { unitFor, unitTable, baseForAnchor, validateConfig, MAX_FAAN_CHOICES } = 
  * 係 build 嗰陣接喺前面，所以呢度直接叫得，唔使 import。
  *
  * 呢個檔案冇任何麻雀規則——所有數、所有方位、所有骰，全部問引擎攞。
+ * 例外：詐糊嘅預設賠款、賠率編輯器用嘅 unitFor/baseForAnchor 呢幾樣，
+ * 暫時直接叫 hk.ts 嘅 function——因為 MVP1 淨係開香港，呢層待 MVP2
+ * 加台灣嗰陣要諗埋點做返 variant-agnostic（見 ENABLED_VARIANT_IDS）。
  */
 
 const $ = (id) => document.getElementById(id);
@@ -1639,9 +1873,12 @@ const $ = (id) => document.getElementById(id);
 const DEFAULT_NAMES = ['玩家一', '玩家二', '玩家三', '玩家四'];
 const STORAGE_KEY = 'mahjong.session.v1';
 const CUSTOM = '自訂';
+const ANIMALS = ['🦊', '🐶', '🐨', '🐼', '🐱', '🐰', '🐻', '🐯', '🐸', '🐵', '🦁', '🐷', '🐮', '🐹'];
 
 let session;
 let lastRoll = null;
+let logView = 'event'; // 'event' | 'score' | 'full'
+let logAsc = false;    // false = 降序（新嘅喺頭），true = 順序
 
 /* ── session ── */
 
@@ -1690,6 +1927,12 @@ const variant = () => variantById(session.variantId);
 const nameOf = (pid) => session.roster.find((p) => p.id === pid)?.name ?? '？';
 const fmt = (n) => (n > 0 ? `+${n}` : String(n));
 const cls = (n) => (n > 0 ? 'pos' : n < 0 ? 'neg' : 'zero');
+
+function avatarFor(id) {
+  let h = 0;
+  for (const ch of id) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return ANIMALS[h % ANIMALS.length];
+}
 
 /* ── 畫面 ── */
 
@@ -1780,41 +2023,167 @@ function renderDice() {
 function describe(hand) {
   const ev = hand.events[0];
   if (ev.kind === 'draw') return '流局';
+  if (ev.kind === 'penalty') return `${nameOf(hand.seats[ev.by])} 詐糊`;
   if (ev.kind === 'win') {
     const who = nameOf(hand.seats[ev.winner]);
     const how = ev.from === 'selfDraw' ? '自摸' : `食 ${nameOf(hand.seats[ev.from])}`;
-    return `${who} ${how} ${variant().describeScore(ev.score)}`;
+    const pao = ev.pao !== undefined ? `（${nameOf(hand.seats[ev.pao])} 包）` : '';
+    return `${who} ${how} ${variant().describeScore(ev.score)}${pao}`;
   }
   return ev.kind;
 }
 
+/* ── 詳細紀錄：事件 / 分數 / 完整，順序 / 降序 ── */
+
+function segControl(options, current, onPick) {
+  const seg = document.createElement('div');
+  seg.className = 'seg';
+  for (const [value, label] of options) {
+    const b = document.createElement('button');
+    b.textContent = label;
+    b.classList.toggle('on', value === current);
+    b.setAttribute('aria-pressed', String(value === current));
+    b.onclick = () => onPick(value);
+    seg.append(b);
+  }
+  return seg;
+}
+
+function eventRow(hand) {
+  const li = document.createElement('li');
+  const biggest = hand.deltas.indexOf(Math.max(...hand.deltas));
+  const amount = hand.deltas[biggest];
+  const seq = document.createElement('span');
+  seq.className = 'seq';
+  seq.textContent = hand.seq;
+  const rnd = document.createElement('span');
+  rnd.className = 'rnd';
+  rnd.textContent = roundLabel(hand.round);
+  const what = document.createElement('span');
+  what.textContent = describe(hand);
+  const amt = document.createElement('span');
+  amt.className = `amt ${cls(amount)}`;
+  amt.textContent = amount === 0 ? '—' : fmt(amount);
+  li.append(seq, rnd, what, amt);
+  return li;
+}
+
+function scoreRow(hand, ids, cumRow) {
+  const li = document.createElement('li');
+  li.className = 'score-row';
+  const grid = document.createElement('div');
+  grid.className = 'score-grid';
+  ids.forEach((id, i) => {
+    const delta = playerDeltaInHand(hand, id);
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    const d = document.createElement('div');
+    d.className = `delta ${delta === null ? 'zero' : cls(delta)}`;
+    d.textContent = delta === null ? '·' : fmt(delta);
+    const c = document.createElement('div');
+    c.className = 'cum';
+    c.textContent = delta === null ? '' : fmt(cumRow[i]);
+    cell.append(d, c);
+    grid.append(cell);
+  });
+  li.append(grid);
+  return li;
+}
+
 function renderLog() {
   const ol = $('log');
+  const toolbar = $('logToolbar');
+  toolbar.innerHTML = '';
   ol.innerHTML = '';
+
   if (session.hands.length === 0) {
+    toolbar.hidden = true;
     const li = document.createElement('li');
     li.className = 'empty';
     li.textContent = '未開始。撳一張牌記低邊個食糊。';
     ol.append(li);
     return;
   }
-  for (const hand of [...session.hands].reverse()) {
-    const li = document.createElement('li');
-    const biggest = hand.deltas.indexOf(Math.max(...hand.deltas));
-    const amount = hand.deltas[biggest];
-    const seq = document.createElement('span');
-    seq.className = 'seq';
-    seq.textContent = hand.seq;
-    const rnd = document.createElement('span');
-    rnd.className = 'rnd';
-    rnd.textContent = roundLabel(hand.round);
-    const what = document.createElement('span');
-    what.textContent = describe(hand);
-    const amt = document.createElement('span');
-    amt.className = `amt ${cls(amount)}`;
-    amt.textContent = amount === 0 ? '—' : fmt(amount);
-    li.append(seq, rnd, what, amt);
-    ol.append(li);
+  toolbar.hidden = false;
+
+  toolbar.append(
+    segControl([['event', '事件'], ['score', '分數'], ['full', '完整']], logView, (v) => {
+      logView = v;
+      renderLog();
+    }),
+    segControl([['desc', '降序'], ['asc', '順序']], logAsc ? 'asc' : 'desc', (v) => {
+      logAsc = v === 'asc';
+      renderLog();
+    }),
+  );
+
+  const ids = session.roster.map((p) => p.id);
+  const running = playerRunningTotals(session.hands, ids);
+
+  if (logView !== 'event') {
+    const legend = document.createElement('div');
+    legend.className = 'score-legend';
+    ids.forEach((id) => {
+      const s = document.createElement('span');
+      s.textContent = nameOf(id);
+      legend.append(s);
+    });
+    ol.append(legend);
+  }
+
+  const order = session.hands.map((_, i) => i);
+  if (!logAsc) order.reverse();
+
+  let lastRoundLabel = null;
+  for (const i of order) {
+    const hand = session.hands[i];
+    const label = roundLabel(hand.round);
+    if (label !== lastRoundLabel) {
+      const div = document.createElement('li');
+      div.className = 'round-divider';
+      div.textContent = label;
+      ol.append(div);
+      lastRoundLabel = label;
+    }
+    if (logView === 'event' || logView === 'full') ol.append(eventRow(hand));
+    if (logView === 'score' || logView === 'full') ol.append(scoreRow(hand, ids, running[i]));
+  }
+}
+
+/* ── 統計數據：卡片 + 稱號 + 皇冠 ── */
+
+function computeBadges(rows) {
+  const badges = new Map(rows.map((r) => [r.id, '陪跑員']));
+  const crowns = { wins: null, selfDraws: null, deals: null };
+  const pick = (key, label) => {
+    const max = Math.max(...rows.map((r) => r[key]));
+    if (max <= 0) return;
+    const leaders = rows.filter((r) => r[key] === max);
+    if (leaders.length !== 1) return; // 撞平就唔頒——寧願冇，唔好亂頒
+    crowns[key] = leaders[0].id;
+    if (badges.get(leaders[0].id) === '陪跑員') badges.set(leaders[0].id, label);
+  };
+  pick('wins', '食糊王');
+  pick('deals', '出銃王');
+  pick('selfDraws', '自摸王');
+  return { badges, crowns };
+}
+
+function shareResults() {
+  const ids = session.roster.map((p) => p.id);
+  const rows = [...playerStats(session.hands, ids)].sort((a, b) => b.total - a.total);
+  const lines = [
+    `雀數 · ${roundLabel(session.round)}`,
+    ...rows.map((r, i) => `${i + 1}. ${nameOf(r.id)}　${fmt(r.total)}`),
+  ];
+  const text = lines.join('\n');
+  if (navigator.share) {
+    navigator.share({ text }).catch(() => {});
+  } else {
+    navigator.clipboard?.writeText(text).then(
+      () => toast('已經 copy 咗去剪貼簿'),
+      () => toast('copy 唔到，請自己 select'),
+    );
   }
 }
 
@@ -1833,36 +2202,78 @@ function renderStats() {
   box.append(summary);
   if (overall.hands === 0) return;
 
-  const table = document.createElement('table');
-  table.innerHTML =
-    '<thead><tr><th>玩家</th><th>食糊</th><th>自摸</th><th>出銃</th><th>平均</th><th>最大</th><th>總數</th></tr></thead>';
-  const tbody = document.createElement('tbody');
-  for (const r of [...rows].sort((a, b) => b.total - a.total)) {
-    const tr = document.createElement('tr');
-    const cells = [
-      nameOf(r.id), r.wins, r.selfDraws, r.deals,
-      r.avgFaan === null ? '—' : r.avgFaan.toFixed(1),
-      r.biggest === 0 ? '—' : `+${r.biggest}`,
-      fmt(r.total),
-    ];
-    cells.forEach((v, i) => {
-      const td = document.createElement('td');
-      td.textContent = v;
-      if (i === 6) td.className = cls(r.total);
-      tr.append(td);
-    });
-    tbody.append(tr);
-  }
-  table.append(tbody);
-  box.append(table);
+  const top = document.createElement('div');
+  top.className = 'stat-top';
+  const share = document.createElement('button');
+  share.textContent = '📤 分享賽果';
+  share.onclick = shareResults;
+  top.append(share);
+  box.append(top);
 
+  const { badges, crowns } = computeBadges(rows);
+  const cards = document.createElement('div');
+  cards.className = 'stat-cards';
+
+  [...rows].sort((a, b) => b.total - a.total).forEach((r, rank) => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+
+    const head = document.createElement('div');
+    head.className = 'stat-card-head';
+    const av = document.createElement('span');
+    av.className = 'stat-avatar';
+    av.textContent = avatarFor(r.id);
+    av.setAttribute('aria-hidden', 'true');
+    const rk = document.createElement('span');
+    rk.className = 'stat-rank';
+    rk.textContent = rank + 1;
+    const nm = document.createElement('span');
+    nm.className = 'stat-name';
+    nm.textContent = nameOf(r.id);
+    const bd = document.createElement('span');
+    const label = badges.get(r.id);
+    bd.className = `stat-badge${label !== '陪跑員' ? ' top' : ''}`;
+    bd.textContent = label;
+    head.append(av, rk, nm, bd);
+
+    const body = document.createElement('div');
+    body.className = 'stat-card-body';
+    for (const [key, val, lbl] of [
+      ['wins', r.wins, '食糊'],
+      ['selfDraws', r.selfDraws, '自摸'],
+      ['deals', r.deals, '出銃'],
+    ]) {
+      const cell = document.createElement('div');
+      cell.className = 'stat-cell';
+      if (crowns[key] === r.id) {
+        const cr = document.createElement('span');
+        cr.className = 'stat-crown';
+        cr.textContent = '👑';
+        cr.setAttribute('aria-hidden', 'true');
+        cell.append(cr);
+      }
+      const n = document.createElement('div');
+      n.className = 'n';
+      n.textContent = val;
+      const l = document.createElement('div');
+      l.className = 'lbl';
+      l.textContent = lbl;
+      cell.append(n, l);
+      body.append(cell);
+    }
+    card.append(head, body);
+    cards.append(card);
+  });
+  box.append(cards);
+
+  // 對戰矩陣（邊個出銃俾邊個）——同卡片係唔同層次嘅資料，keep 埋。
   const m = dealMatrix(session.hands, ids);
   if (m.flat().some((n) => n > 0)) {
     const h = document.createElement('h3');
     h.textContent = '邊個出銃俾邊個';
     const mt = document.createElement('table');
-    const head = ['出銃 ↓ ／ 食糊 →', ...ids.map(nameOf)];
-    mt.innerHTML = `<thead><tr>${head.map((t) => `<th>${t}</th>`).join('')}</tr></thead>`;
+    const head2 = ['出銃 ↓ ／ 食糊 →', ...ids.map(nameOf)];
+    mt.innerHTML = `<thead><tr>${head2.map((t) => `<th>${t}</th>`).join('')}</tr></thead>`;
     const mb = document.createElement('tbody');
     ids.forEach((id, i) => {
       const tr = document.createElement('tr');
@@ -1937,50 +2348,257 @@ function toast(msg) {
   toast._t = setTimeout(() => { t.hidden = true; }, 2600);
 }
 
-/* ── 記一鋪牌：撳贏家 → 點食 → 幾多番 ── */
+/**
+ * 轉盤揀嘢：native picker 嘅感覺，靠 scroll-snap。
+ *
+ * 撳一個項目即刻生效（唔使等 scroll settle）；手指拖到邊個就等
+ * scroll 停低（debounce）先算數，兩條路都會觸發 onChange。
+ */
+function wheelPicker({ items, selected = 0, onChange }) {
+  const frame = document.createElement('div');
+  frame.className = 'wheel-frame';
+  const band = document.createElement('div');
+  band.className = 'wheel-band';
+  const wrap = document.createElement('div');
+  wrap.className = 'wheel';
+  const list = document.createElement('div');
+  wrap.append(list);
+  frame.append(band, wrap);
 
-function pickHow(winner) {
-  const who = nameOf(session.seats[winner]);
-  openSheet(`${who} 食糊`, '點食？', (sheet) => {
-    const grid = document.createElement('div');
-    grid.className = 'grid';
-    const self = optionButton('自摸', '三家各畀', true);
-    self.onclick = () => pickScore(winner, 'selfDraw');
-    grid.append(self);
-    for (let s = 0; s < 4; s++) {
-      if (s === winner) continue;
-      const b = optionButton(nameOf(session.seats[s]), '出銃');
-      b.onclick = () => pickScore(winner, s);
-      grid.append(b);
-    }
-    sheet.append(grid);
-
-    const rename = document.createElement('button');
-    rename.className = 'cancel';
-    rename.textContent = `改名（${who}）`;
-    rename.onclick = () => pickName(winner);
-    sheet.append(rename);
+  const spacerTop = document.createElement('div');
+  const spacerBottom = document.createElement('div');
+  const realEls = [];
+  list.append(spacerTop);
+  items.forEach((it, i) => {
+    const el = document.createElement('div');
+    el.className = 'wheel-item';
+    el.textContent = it.label;
+    el.onclick = () => select(i, true);
+    list.append(el);
+    realEls.push(el);
   });
+  list.append(spacerBottom);
+
+  let itemHeight = 40;
+  let current = Math.max(0, Math.min(items.length - 1, selected));
+
+  function mark(i) {
+    realEls.forEach((el, idx) => el.classList.toggle('on', idx === i));
+  }
+  function scrollToIndex(i, smooth) {
+    wrap.scrollTo({ top: i * itemHeight, behavior: smooth ? 'smooth' : 'auto' });
+  }
+  function select(i, smooth) {
+    i = Math.max(0, Math.min(items.length - 1, i));
+    const changed = i !== current;
+    current = i;
+    mark(i);
+    scrollToIndex(i, smooth);
+    if (changed) onChange(i, items[i]);
+  }
+
+  let settleTimer;
+  wrap.addEventListener('scroll', () => {
+    clearTimeout(settleTimer);
+    settleTimer = setTimeout(() => {
+      const i = Math.max(0, Math.min(items.length - 1, Math.round(wrap.scrollTop / itemHeight)));
+      const changed = i !== current;
+      current = i;
+      mark(i);
+      if (changed) onChange(i, items[i]);
+    }, 110);
+  }, { passive: true });
+
+  requestAnimationFrame(() => {
+    itemHeight = realEls[0]?.getBoundingClientRect().height || 40;
+    spacerTop.style.height = `${2 * itemHeight}px`;
+    spacerBottom.style.height = `${2 * itemHeight}px`;
+    scrollToIndex(current, false);
+    mark(current);
+  });
+
+  return { el: frame, get value() { return current; } };
 }
 
-function pickScore(winner, from) {
-  const v = variant();
-  const who = nameOf(session.seats[winner]);
-  const how = from === 'selfDraw' ? '自摸' : `食 ${nameOf(session.seats[from])}`;
-  const options = v.scoreOptions(session.config, { winner, from, round: session.round });
+/* ── 記一鋪牌：撳嗰隻牌，一個 sheet 度揀晒番數、出銃／自摸、包自摸 ── */
 
-  openSheet(`${who} ${how}`, v.scorePrompt, (sheet) => {
-    const grid = document.createElement('div');
-    grid.className = 'grid four';
-    for (const opt of options) {
-      const b = optionButton(opt.label, opt.note);
-      if (options.length > 12) b.classList.add('tight');
-      b.onclick = () =>
-        record([{ kind: 'win', winner, from, score: opt.score }], `${who} ${how} ${opt.label}`);
-      grid.append(b);
+function pickScore(winner) {
+  const v = variant();
+  const c = session.config;
+  const who = nameOf(session.seats[winner]);
+  const opponents = [0, 1, 2, 3].filter((s) => s !== winner);
+
+  // 番數 wheel 嘅內容淨係起計一次（用 'selfDraw' 攞 label/score 就夠）；
+  // 個 note（金額）淨係喺 renderPreview 度先按實際 from 再算，
+  // 咁樣轉「出銃／自摸」嗰陣唔使成個番數 wheel 重新起，唔會跳。
+  const faanOptions = v.scoreOptions(c, { winner, from: 'selfDraw', round: session.round });
+  const faanItems = [
+    { label: '詐糊', misdeal: true },
+    ...faanOptions.map((o) => ({ label: o.label, score: o.score })),
+  ];
+  const fromItems = [
+    ...opponents.map((s) => ({ label: nameOf(session.seats[s]), seat: s })),
+    { label: '自摸', seat: 'selfDraw' },
+  ];
+
+  let faanIdx = faanItems.length > 1 ? 1 : 0;
+  let fromIdx = 0;
+  let paoOn = false;
+  let paoSeat = null;
+
+  const currentFrom = () => fromItems[fromIdx].seat;
+  const isSelfDraw = () => currentFrom() === 'selfDraw';
+  const isMisdeal = () => !!faanItems[faanIdx].misdeal;
+
+  function draw() {
+    openSheet('食糊！', '幾多番、邊個出銃定自摸——揀晒佢再確定。', (sheet) => {
+      if (isMisdeal()) {
+        buildMisdeal(sheet);
+        return;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'wheel-row';
+
+      const faanCol = document.createElement('div');
+      faanCol.className = 'wheel-col';
+      faanCol.innerHTML = '<div class="wheel-col-label">番數</div>';
+      const faanWheel = wheelPicker({
+        items: faanItems,
+        selected: faanIdx,
+        onChange: (i) => {
+          faanIdx = i;
+          if (isMisdeal()) { draw(); return; }
+          renderPreview();
+        },
+      });
+      faanCol.append(faanWheel.el);
+
+      const fromCol = document.createElement('div');
+      fromCol.className = 'wheel-col';
+      fromCol.innerHTML = '<div class="wheel-col-label">出銃 / 自摸</div>';
+      const fromWheel = wheelPicker({
+        items: fromItems,
+        selected: fromIdx,
+        onChange: (i) => {
+          fromIdx = i;
+          paoOn = false;
+          paoSeat = null;
+          draw(); // from 轉咗要現形／隱藏「包自摸」，成個 sheet 重畫一次
+        },
+      });
+      fromCol.append(fromWheel.el);
+
+      row.append(faanCol, fromCol);
+      sheet.append(row);
+
+      if (isSelfDraw()) sheet.append(buildPaoToggle());
+
+      const preview = document.createElement('p');
+      preview.className = 'wheel-preview';
+      sheet.append(preview);
+
+      function renderPreview() {
+        const from = currentFrom();
+        const opts = v.scoreOptions(c, { winner, from, round: session.round });
+        const matched = opts[faanIdx - 1]; // faanItems[0] 係詐糊，真番數由 index 1 開始
+        preview.innerHTML = `贏家收<b>${matched ? matched.note : '—'}</b>`;
+      }
+      renderPreview();
+
+      const confirmRow = document.createElement('div');
+      confirmRow.className = 'row';
+      const ok = optionButton('確定', null, true);
+      ok.onclick = commit;
+      confirmRow.append(ok);
+      sheet.append(confirmRow);
+    });
+  }
+
+  function buildPaoToggle() {
+    const wrap = document.createElement('div');
+    const row = document.createElement('div');
+    row.className = 'switch-row';
+    const text = document.createElement('div');
+    text.className = 'switch-text';
+    text.innerHTML =
+      '<div class="switch-label">出銃者包自摸</div><div class="switch-hint">一個人孭晒六份，其餘兩家唔使畀</div>';
+    const sw = document.createElement('button');
+    sw.className = `switch${paoOn ? ' on' : ''}`;
+    sw.setAttribute('aria-pressed', String(paoOn));
+    sw.onclick = () => { paoOn = !paoOn; if (!paoOn) paoSeat = null; draw(); };
+    row.append(text, sw);
+    wrap.append(row);
+
+    if (paoOn) {
+      const grid = document.createElement('div');
+      grid.className = 'grid two';
+      grid.style.marginTop = '.6rem';
+      opponents.forEach((seat) => {
+        const b = optionButton(nameOf(session.seats[seat]), null);
+        b.classList.add('tight');
+        if (paoSeat === seat) b.classList.add('on');
+        b.onclick = () => { paoSeat = seat; draw(); };
+        grid.append(b);
+      });
+      wrap.append(grid);
     }
-    sheet.append(grid);
-  });
+    return wrap;
+  }
+
+  function buildMisdeal(sheet) {
+    const base = unitFor(c.minFaan, c);
+    const p = document.createElement('p');
+    p.className = 'sub';
+    p.style.marginTop = '0';
+    p.textContent = `${who} 詐糊，要賠俾其餘三家，每人幾多？`;
+    sheet.append(p);
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.min = '1';
+    input.inputMode = 'numeric';
+    input.value = String(base);
+    sheet.append(input);
+
+    const quick = document.createElement('div');
+    quick.className = 'grid';
+    quick.style.marginTop = '.6rem';
+    [1, 2, 4].forEach((mult) => {
+      const b = optionButton(String(base * mult), mult === 1 ? '起糊嗰份' : `×${mult}`);
+      b.classList.add('tight');
+      b.onclick = () => { input.value = String(base * mult); };
+      quick.append(b);
+    });
+    sheet.append(quick);
+
+    const row = document.createElement('div');
+    row.className = 'row';
+    const ok = optionButton('確定', null, true);
+    ok.onclick = () => {
+      const amt = Math.round(Number(input.value));
+      if (!Number.isFinite(amt) || amt <= 0) { toast('金額唔啱'); return; }
+      record([{ kind: 'penalty', by: winner, perPlayer: amt }], `${who} 詐糊，賠 ${amt}`);
+    };
+    row.append(ok);
+    sheet.append(row);
+  }
+
+  function commit() {
+    const opt = faanItems[faanIdx];
+    const from = currentFrom();
+    const how = from === 'selfDraw' ? '自摸' : `食 ${nameOf(session.seats[from])}`;
+    const usePao = paoOn && paoSeat !== null;
+    const events = [
+      { kind: 'win', winner, from, score: opt.score, ...(usePao ? { pao: paoSeat } : {}) },
+    ];
+    const label = usePao
+      ? `${who} ${how} ${opt.label}（${nameOf(session.seats[paoSeat])} 包自摸）`
+      : `${who} ${how} ${opt.label}`;
+    record(events, label);
+  }
+
+  draw();
 }
 
 function pickName(seat) {
@@ -2010,6 +2628,20 @@ function pickName(seat) {
   });
 }
 
+function pickRenameChoice() {
+  openSheet('改名', '揀邊個要改名。', (sheet) => {
+    const grid = document.createElement('div');
+    grid.className = 'grid two';
+    for (let s = 0; s < 4; s++) {
+      const seat = s;
+      const b = optionButton(nameOf(session.seats[seat]), `${WIND_NAMES[playerWind(seat, session.round)]}家`);
+      b.onclick = () => pickName(seat);
+      grid.append(b);
+    }
+    sheet.append(grid);
+  });
+}
+
 /* ── 骰仔 ── */
 
 function throwDice() {
@@ -2028,6 +2660,9 @@ function openSettings() {
 
     const rules = optionButton('玩法同賠率', session.presetName);
     rules.onclick = () => openRuleEditor();
+
+    const rename = optionButton('改名', '幫任何一位改名');
+    rename.onclick = () => pickRenameChoice();
 
     const dice = optionButton(`骰子 ${session.diceCount} 粒`, '撳一下轉 2／3 粒');
     dice.onclick = () => {
@@ -2067,7 +2702,7 @@ function openSettings() {
     const fresh = optionButton('新牌局', '分數清零');
     fresh.onclick = () => confirmReset();
 
-    grid.append(rules, dice, seats, sub, dealer, draw, exp, fresh);
+    grid.append(rules, rename, dice, seats, sub, dealer, draw, exp, fresh);
     sheet.append(grid);
   });
 }
@@ -2415,7 +3050,7 @@ function record(events, label) {
 /* ── 綁 ── */
 
 for (let seat = 0; seat < 4; seat++) {
-  $(`seat${seat}`).onclick = () => pickHow(seat);
+  $(`seat${seat}`).onclick = () => pickScore(seat);
 }
 
 $('drawBtn').onclick = () => record([{ kind: 'draw' }], '流局');
