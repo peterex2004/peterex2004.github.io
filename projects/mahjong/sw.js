@@ -1,4 +1,4 @@
-/* 離線用。淨係 cache 個 app 本身——冇任何網絡請求要代理。 */
+/* 離線用。只 cache app 本身——沒有任何網路請求要代理。 */
 const CACHE = 'mahjong-v2';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg',
   './icon-180.png', './icon-192.png', './icon-512.png'];
@@ -17,7 +17,7 @@ self.addEventListener('activate', (e) => {
 
 self.addEventListener('fetch', (e) => {
   if (e.request.method !== 'GET') return;
-  // 網絡行先，行唔到就用 cache——咁樣改完 build 唔使死等 cache 過期
+  // 優先用網路，行不通就用 cache——這樣改完 build 不用苦等 cache 過期
   e.respondWith(
     fetch(e.request)
       .then((res) => {

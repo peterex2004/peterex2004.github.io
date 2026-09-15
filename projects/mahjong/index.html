@@ -1,20 +1,20 @@
 <!doctype html>
-<html lang="zh-HK">
+<html lang="zh-TW">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="mobile-web-app-capable" content="yes">
-<!-- iOS 加到主畫面之後就冇 Safari 個工具列，似真 app -->
+<!-- iOS 加到主畫面之後就沒有 Safari 的工具列，像真正的 app -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="雀數">
-<!-- iOS 唔認 SVG 做主畫面 icon，一定要 PNG -->
+<!-- iOS 不接受 SVG 當主畫面 icon，一定要 PNG -->
 <link rel="apple-touch-icon" href="icon-180.png">
-<!-- 未公開：唔想 Google 索引到。想公開嗰陣刪咗呢行。 -->
+<!-- 未公開：不想被 Google 索引。想公開時刪掉這一行。 -->
 <meta name="robots" content="noindex, nofollow">
 <title>雀數 · 打麻雀記分</title>
 <meta name="theme-color" content="#12483A">
-<!-- 淨係喺 server 上面行嗰陣先用得着；double-click 開個檔案本身已經離線 -->
+<!-- 只有在 server 上執行時才用得到；直接雙擊開啟檔案本身已經離線可用 -->
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg">
 <style>
@@ -57,18 +57,18 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html {
   height: 100%;
-  /* 手機轉橫掂唔好自己放大字 */
+  /* 手機轉橫時不要自己放大字 */
   -webkit-text-size-adjust: 100%;
-  /* 唔好落拉刷新／唔好彈彈吓——打牌打到一半 reload 就大鑊 */
+  /* 不要下拉刷新／不要彈跳——打牌打到一半 reload 就麻煩了 */
   overscroll-behavior: none;
 }
 body {
-  /* 100vh 喺 iOS Safari 會計埋工具列，撞到個底，所以用 svh 做最低高度。
-     用 min-height 唔用 height：紀錄多嗰陣要俾成頁郁得，唔係鎖死喺一個
-     螢幕度——之前鎖死咗，紀錄得返好少位，仲 scroll 唔到上去睇。 */
+  /* 100vh 在 iOS Safari 會算入工具列，撞到底部，所以用 svh 做最低高度。
+     用 min-height 不用 height：紀錄變多時要讓整頁可以延伸，而不是鎖死在一個
+     螢幕高度——之前鎖死過，紀錄能顯示的空間很少，還 scroll 不到上面看。 */
   min-height: 100vh;
   min-height: 100svh;
-  overscroll-behavior-y: none; /* 淨係擋落拉刷新，唔會擋正常 scroll */
+  overscroll-behavior-y: none; /* 只擋下拉刷新，不擋正常 scroll */
   margin: 0;
   background: var(--bg);
   color: var(--ink);
@@ -78,8 +78,8 @@ body {
   -webkit-user-select: none;
   user-select: none;
 }
-button { font: inherit; cursor: pointer; color: inherit; }
-button:active:not(:disabled) { transform: translateY(1px); }
+button { font: inherit; cursor: pointer; color: inherit; transition: scale .1s cubic-bezier(0.2, 0, 0, 1); }
+button:active:not(:disabled) { scale: 0.96; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 
@@ -88,7 +88,7 @@ header {
   display: flex;
   align-items: center;
   gap: .7rem;
-  /* 瀏海／動態島底下唔可以擺嘢 */
+  /* 瀏海／動態島底下不可以放東西 */
   padding: calc(.75rem + env(safe-area-inset-top)) calc(.95rem + env(safe-area-inset-right))
            .6rem calc(.95rem + env(safe-area-inset-left));
   background: var(--surface);
@@ -125,7 +125,7 @@ header {
 .streak-pill[hidden] { display: none !important; }
 .icons { display: flex; gap: .3rem; flex-shrink: 0; }
 .icon-btn {
-  /* Apple HIG：可撳嘅嘢最細 44×44 */
+  /* Apple HIG：可點的東西最小 44×44 */
   width: 2.75rem; height: 2.75rem;
   border: 1px solid var(--rule);
   background: var(--surface-2);
@@ -270,11 +270,13 @@ main {
   padding: .85rem .5rem;
   min-height: 3rem;
   border-radius: 12px;
-  border: 1px solid var(--rule);
+  border: none;
   background: var(--surface);
   font-size: .93rem;
   font-weight: 600;
-  box-shadow: 0 1px 2px var(--shadow);
+  /* 邊框用 box-shadow 做（0 blur 的 ring），只是為了跟下面那層深度陰影同屬
+     一套系統，不用 border + shadow 兩樣一起做「讓按鈕看起來浮起」這件事 */
+  box-shadow: 0 0 0 1px var(--rule), 0 1px 2px var(--shadow);
 }
 
 /* ══ tabs + panels ══ */
@@ -283,8 +285,8 @@ main {
   background: var(--surface);
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
-  /* 成頁 scroll 落去嗰陣黐喺頂，隨時換 tab；加返少少頂邊距
-     頂住個瀏海／狀態列，因為呢排掣有機會黐到最頂。 */
+  /* 整頁往下 scroll 時黏在頂端，隨時可以換 tab；加一點頂部邊距
+     頂住瀏海／狀態列，因為這排按鈕有機會黏到最頂。 */
   position: sticky;
   top: 0;
   padding-top: env(safe-area-inset-top);
@@ -299,14 +301,14 @@ main {
 .tab.on { color: var(--ink); border-bottom-color: var(--accent); }
 .panel {
   background: var(--surface);
-  /* 唔再靠「剩返幾多位」嚟決定紀錄畀幾多位——夠一個screen高，
-     紀錄少都唔會迫住，紀錄多就成頁自然拉長，scroll 落去睇晒。 */
+  /* 不再靠「剩下多少空間」來決定紀錄有多少空間——固定一個 screen 高，
+     紀錄少也不會太擠，紀錄多就整頁自然拉長，往下 scroll 就能看完。 */
   min-height: 60svh;
   padding-bottom: calc(1rem + env(safe-area-inset-bottom));
 }
 .panel[hidden] { display: none !important; }
 
-/* ── 詳細紀錄：工具列（睇邊種、順序） ── */
+/* ── 詳細紀錄：工具列（看哪一種、排序方式） ── */
 .log-toolbar {
   display: flex;
   gap: .5rem;
@@ -315,8 +317,8 @@ main {
   background: var(--surface);
   border-bottom: 1px solid var(--rule);
 }
-/* class 嘅 display:flex specificity 贏 [hidden] 個 UA 預設，要自己補一條先真係隱藏得到
-   ——同 .panel[hidden] / .dice[hidden] 果個坑一樣。 */
+/* class 的 display:flex specificity 贏過 [hidden] 的 UA 預設，要自己補一條才能真的隱藏
+   ——和 .panel[hidden] / .dice[hidden] 是同一個坑。 */
 .log-toolbar[hidden] { display: none !important; }
 .seg { display: flex; background: var(--surface-2); border-radius: 9px; padding: 2px; gap: 2px; }
 .seg button {
@@ -340,7 +342,7 @@ main {
 .log-list .amt { font-variant-numeric: tabular-nums; font-weight: 600; }
 .log-list li.empty { display: block; padding: 1rem .95rem; color: var(--muted); font-size: .8rem; text-align: center; }
 
-/* 「分數」view：一鋪一橫排，四個位各自嘅呢鋪／累計 */
+/* 「分數」view：一鋪一橫排，四個位各自的這鋪／累計 */
 .log-list li.score-row {
   display: block;
   padding: .5rem .95rem;
@@ -354,17 +356,17 @@ main {
   font-size: .68rem; color: var(--muted); margin-bottom: .3rem;
 }
 .score-legend {
-  /* 冇做 sticky——同 tabs 疊埋一齊要計安全區高度，喺唔同機仔會唔啱位。
-     淨係俾個 tabs sticky 已經夠用（隨時換 tab），呢個 legend 一齊 scroll 走得。 */
+  /* 沒有做 sticky——和 tabs 疊在一起要算安全區高度，在不同機型會對不準位置。
+     只讓 tabs sticky 就已經夠用（隨時可以換 tab），這個 legend 就跟著一起 scroll 走。 */
   display: grid; grid-template-columns: repeat(4, 1fr); gap: .3rem;
   padding: .5rem .95rem; font-size: .68rem; color: var(--muted); text-align: center;
   border-bottom: 1px solid var(--rule);
   background: var(--surface);
 }
 .log-list li.round-divider {
-  /* .log-list li 個 grid（class+element，specificity 贏單一個 class）
-     會將呢個得一嚿文字嘅 <li> 谷去第一格 1.5rem 闊，中文冇字距
-     就逐隻字換行——同之前 empty-state 嗰個坑一樣，要用返 display:block 頂走。 */
+  /* .log-list li 的 grid（class+element，specificity 贏過單一個 class）
+     會把這個只有一段文字的 <li> 擠進第一格 1.5rem 寬，中文沒有字距
+     就逐字換行——和之前 empty-state 的坑一樣，要用 display:block 蓋掉。 */
   display: block;
   padding: .4rem .95rem;
   font-size: .68rem; font-weight: 700; color: var(--accent);
@@ -393,6 +395,7 @@ main {
   background: var(--surface-2); color: var(--muted); white-space: nowrap; flex-shrink: 0;
 }
 .stat-badge.top { background: rgba(176,138,46,.18); color: var(--gold); }
+.stat-badge.roast { background: rgba(165,56,43,.14); color: var(--red); }
 .stat-card-body {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: .3rem;
   margin-top: .6rem; padding-top: .6rem; border-top: 1px solid var(--rule);
@@ -408,14 +411,14 @@ main {
 #stats td { text-align: right; padding: .34rem .22rem; border-bottom: 1px solid var(--rule); }
 #stats h3 { font-size: .72rem; color: var(--muted); margin: 1rem 0 .25rem; }
 
-/* 直向：等啲仔女直接參與 body 個 flex，唔好多咗一層 */
+/* 直向：讓子元素直接參與 body 的 flex，不要多一層 */
 .side { display: contents; }
 
 /* ══ 打橫用 ══ */
 @media (orientation: landscape) and (max-height: 34rem) {
-  /* 打橫個螢幕矮，成頁 scroll 反而唔啱用——照舊鎖死一個 screen，
-     紀錄靠 .panel 自己嗰嚿 scroll。flex-wrap 限制唔到第二行嘅高度，
-     所以要用 grid 先鎖得住。 */
+  /* 橫向時螢幕矮，整頁 scroll 反而不適用——照樣鎖死一個 screen，
+     紀錄靠 .panel 自己那塊 scroll。flex-wrap 限制不到第二行的高度，
+     所以要用 grid 才鎖得住。 */
   body {
     display: grid;
     grid-template-columns: 52fr 44fr;
@@ -432,7 +435,7 @@ main {
   .side { grid-column: 2; grid-row: 3; }
   .round-label { font-size: 1.1rem; }
   .a2hs { width: 100%; }
-  /* 打橫嗰陣個檯面要由高度決定大細，唔係嘅話會撐爆條 viewport */
+  /* 橫向時牌桌要由高度決定大小，否則會撐爆 viewport */
   main { min-width: 0; min-height: 0; }
   .felt { height: 100%; width: auto; max-width: 100%; }
   .side { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -479,8 +482,11 @@ main {
   background: rgba(6,16,12,.55);
   display: grid; place-items: end center;
   z-index: 10;
+  opacity: 0;
+  transition: opacity .2s cubic-bezier(0.2, 0, 0, 1);
 }
 .scrim[hidden] { display: none !important; }
+.scrim.open { opacity: 1; }
 .sheet {
   background: var(--bg);
   width: min(100%, 29rem);
@@ -491,7 +497,11 @@ main {
            calc(1.05rem + env(safe-area-inset-bottom)) calc(1rem + env(safe-area-inset-left));
   overscroll-behavior: contain;
   box-shadow: 0 -10px 34px -12px rgba(0,0,0,.5);
+  /* 小幅度 translateY——不是整張沉下去，出場與入場走同一條路徑 */
+  transform: translateY(12px);
+  transition: transform .2s cubic-bezier(0.2, 0, 0, 1);
 }
+.scrim.open .sheet { transform: translateY(0); }
 .sheet h3 { margin: 0 0 .12rem; font-size: 1.08rem; }
 .sheet .sub { margin: 0 0 .85rem; color: var(--muted); font-size: .79rem; line-height: 1.5; }
 .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(4.6rem, 1fr)); gap: .5rem; }
@@ -520,7 +530,7 @@ main {
 .field { margin: .85rem 0 0; }
 .field > label { display: block; font-size: .72rem; color: var(--muted); margin-bottom: .3rem; font-weight: 600; }
 input[type=text], input[type=number] {
-  /* 細過 16px 嘅話，iOS 一 focus 就會自動放大成版嘢，好核突 */
+  /* 小於 16px 的話，iOS 一 focus 就會自動放大整個畫面，很難看 */
   font-size: 16px;
   font-family: inherit;
   width: 100%;
@@ -586,7 +596,7 @@ input[type=text], input[type=number] {
   font-variant-numeric: tabular-nums; margin-top: .18rem;
 }
 
-/* ── 開關（包自摸嗰啲用）── */
+/* ── 開關（包自摸那類用）── */
 .switch-row {
   display: flex; align-items: center; justify-content: space-between; gap: .6rem;
   margin-top: .9rem; padding: .7rem .8rem;
@@ -598,11 +608,14 @@ input[type=text], input[type=number] {
 .switch {
   position: relative; width: 2.75rem; height: 1.65rem; flex-shrink: 0;
   border-radius: 999px; background: var(--rule); border: none; padding: 0;
+  /* 按下那瞬間的 scale 與變動的 background-color 要寫在一起——只在
+     .switch::after 轉 transform 不夠，開關底色的變化會比圓點停下來慢 */
+  transition: background-color .15s cubic-bezier(0.2, 0, 0, 1), scale .1s cubic-bezier(0.2, 0, 0, 1);
 }
 .switch::after {
   content: ''; position: absolute; top: 2px; left: 2px; width: 1.4rem; height: 1.4rem;
   background: #fff; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,.35);
-  transition: transform .15s ease;
+  transition: transform .15s cubic-bezier(0.2, 0, 0, 1);
 }
 .switch.on { background: var(--accent); }
 .switch.on::after { transform: translateX(1.1rem); }
@@ -622,12 +635,15 @@ table.rates tr.anchor-row td { background: rgba(176,138,46,.14); }
 
 .toast {
   position: fixed; left: 50%; bottom: 1.1rem;
-  transform: translateX(-50%);
+  transform: translateX(-50%) translateY(6px);
+  opacity: 0;
   background: var(--ink); color: var(--bg);
   padding: .52rem .9rem; border-radius: 9px;
   font-size: .81rem; z-index: 20; max-width: 90vw; text-align: center;
+  transition: transform .2s cubic-bezier(0.2, 0, 0, 1), opacity .2s cubic-bezier(0.2, 0, 0, 1);
 }
 .toast[hidden] { display: none !important; }
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
 </style>
 </head>
 <body>
@@ -653,7 +669,7 @@ table.rates tr.anchor-row td { background: rgba(176,138,46,.14); }
     <button class="seat" id="seat3"></button>
     <div class="center">
       <div class="dice" id="dice" hidden></div>
-      <div class="hint" id="centerHint">撳邊個<br>食糊</div>
+      <div class="hint" id="centerHint">點選誰<br>食糊</div>
     </div>
   </div>
 </main>
@@ -683,18 +699,18 @@ table.rates tr.anchor-row td { background: rgba(176,138,46,.14); }
 <div class="toast" id="toast" hidden></div>
 
 <script type="module">
-/* ═══ 計分引擎（由 src/*.ts 自動產生，唔好直接改）═══ */
+/* ═══ 計分引擎（由 src/*.ts 自動產生，請勿直接修改）═══ */
 const __m_types = (() => {
 
 /**
  * 共用領域型別。
  *
- * 核心約定：座位索引 0,1,2,3 按出牌次序排，即 seat+1 就係下家。
- * 麻雀逆時針行，所以呢個索引一路對應返東→南→西→北。
- * 方位（門風／局／圈）永遠由莊家位推算，唔會獨立存低。
+ * 核心約定：座位索引 0,1,2,3 按出牌次序排列，即 seat+1 就是下家。
+ * 麻將逆時針進行，因此這個索引始終對應著東→南→西→北。
+ * 方位（門風／局／圈）永遠由莊家位推算而得，不會獨立儲存。
  */
 
-/** 座位。固定唔郁（除非換位），唔等於方位。 */
+/** 座位。固定不變（除非換位），不等於方位。 */
                                  
 
 /** 方位。0=東 1=南 2=西 3=北 */
@@ -702,12 +718,12 @@ const __m_types = (() => {
 
 const WIND_NAMES = ['東', '南', '西', '北']         ;
 
-/** 一鋪牌之後四個座位嘅加減。不變式：加埋一定等於 0。 */
+/** 一鋪牌之後四個座位的加減。不變式：加總必定等於 0。 */
                                                       
 
                               
 
-/** id 永不改變，name 隨時改得。事件序列只認 id，唔認 name。 */
+/** id 永不改變，name 隨時可以修改。事件序列只認 id，不認 name。 */
                       
                
                
@@ -716,67 +732,67 @@ const WIND_NAMES = ['東', '南', '西', '北']         ;
 /**
  * 局面狀態。
  *
- * 設計重點：`dealerRotations` 一個數就決定晒圈、局同莊家位——
+ * 設計重點：單靠 `dealerRotations` 這一個數就能決定圈、局與莊家位——
  *   莊家位 = (startDealerSeat + dealerRotations) % 4
  *   局     = dealerRotations % 4
  *   圈     = floor(dealerRotations / 4) % 4
- * 所以三者永遠唔會唔同步，而人手 override 亦只係改一個數。
+ * 因此三者永遠不會不同步，而手動 override 也只需修改一個數值。
  */
                           
-                         
+                           
                         
-                            
+                              
                           
-                    
+                       
                       
-                         
+                           
                         
   
 
 /**
- * 一鋪牌入面發生嘅事。
+ * 一鋪牌之中發生的事。
  *
- * 注意係 array 唔係單數——碰槓牌（跑馬仔）一鋪可以有幾件收錢嘅事
- * （暗槓收兩轉、加槓收一轉、最後食糊）。其他玩法長度永遠係 1。
+ * 注意是 array 而不是單一物件——碰槓牌（跑馬仔）玩法一鋪可以有多筆收錢事件
+ * （暗槓收兩轉、加槓收一轉、最後食糊）。其他玩法的長度永遠是 1。
  *
- * S = 該玩法嘅計分輸入（香港係 { faan }，台灣係 { tai }，日麻係 { han, fu }）。
+ * S = 該玩法的計分輸入（香港是 { faan }，台灣是 { tai }，日本麻將是 { han, fu }）。
  */
                           
      
                                        
     
-                                   
-                                         
-                                 
-                                  
+                                    
+                                                
+                                          
+                                         
      
                                                                                 
-                               
+                                
                                      
                      
                                                                       
-                                      
+                                       
                                                                      
-                             
+                               
                                        
 
-/** 一鋪牌嘅完整紀錄。 */
+/** 一鋪牌的完整紀錄。 */
                        
               
-                                      
+                                         
                                                   
-                       
+                          
                     
                          
-                            
+                         
                  
                 
   
 
-/** 一場牌局打幾耐。 */
+/** 一場牌局打多久。 */
                                                   
 
-/** 每種長度打幾多個圈。 */
+/** 每種長度要打幾個圈。 */
 const ROUNDS_IN                             = {
   east: 1, // 東圈
   half: 2, // 半莊（東南）
@@ -798,30 +814,30 @@ return { WIND_NAMES, ROUNDS_IN, ZERO_DELTAS, SEATS, otherSeats };
 const __m_round = (() => {
 const { ROUNDS_IN, WIND_NAMES } = __m_types;
 /**
- * 方位同局數推進。
+ * 方位與局數推進。
  *
- * 最易搞錯嗰忽：「東圈南風」個「南」，同「你今鋪係南家」個「南」，
- * 係兩樣嘢、兩條公式，而且減數方向相反。
- *   門風 = 由莊家數起
- *   局   = 由開局莊家數起
+ * 最容易混淆的地方：「東圈南風」中的「南」，與「本局你是南家」中的「南」，
+ * 是兩件不同的事、兩條不同的公式，而且相減的方向相反。
+ *   門風 = 從莊家開始數
+ *   局   = 從開局莊家開始數
  */
 
 
-/** 莊家坐邊個位。由落莊次數推算。 */
+/** 莊家所坐的位置。由落莊次數推算而得。 */
 function dealerSeat(round            )       {
   return ((round.startDealerSeat + round.dealerRotations) % 4)        ;
 }
 
 /**
- * 門風（自風）——你今鋪係咩家。由莊家數起，因為莊家永遠係東。
+ * 門風（自風）——本局你是什麼家。從莊家開始數，因為莊家永遠是東。
  */
 function playerWind(seat      , round            )       {
   return ((seat - dealerSeat(round) + 4) % 4)        ;
 }
 
 /**
- * 局——「東圈南風」個「南」。由開局莊家數起。
- * 留意連莊嗰陣呢個數唔會前進。
+ * 局——即「東圈南風」中的「南」。從開局莊家開始數。
+ * 注意連莊時這個數值不會前進。
  */
 function handWind(round            )       {
   return (round.dealerRotations % 4)        ;
@@ -832,26 +848,26 @@ function prevailingWind(round            )       {
   return (Math.floor(round.dealerRotations / 4) % 4)        ;
 }
 
-/** 畫面中間嗰個標題，例如「東圈東風」。 */
+/** 畫面中間的標題，例如「東圈東風」。 */
 function roundLabel(round            )         {
   return `${WIND_NAMES[prevailingWind(round)]}圈${WIND_NAMES[handWind(round)]}風`;
 }
 
-/** 連莊標示，例如「連莊 2」。冇連莊就 null。 */
+/** 連莊標示，例如「連莊 2」。沒有連莊則為 null。 */
 function consecutiveLabel(round            )                {
   return round.consecutive > 0 ? `連莊 ${round.consecutive}` : null;
 }
 
-/** 開新一場。 */
+/** 開啟新的一場。 */
 function initialRound(startDealerSeat       = 0)             {
   return { startDealerSeat, dealerRotations: 0, consecutive: 0 };
 }
 
 /**
- * 推進去下一鋪。
+ * 推進至下一鋪。
  *
- * dealerKeeps = 莊家繼續做莊（食糊，或者流局而例規係連莊）。
- * 連莊唔會令個標題前進，只加連莊數——好多實作喺呢度會誤將局數 +1。
+ * dealerKeeps = 莊家繼續坐莊（自摸或出銃食糊，或流局而按規則連莊）。
+ * 連莊不會令標題前進，只會增加連莊數——許多實作在此處會誤將局數 +1。
  */
 function advance(round            , dealerKeeps         )             {
   if (dealerKeeps) {
@@ -864,17 +880,17 @@ function advance(round            , dealerKeeps         )             {
   };
 }
 
-/** 一場打完未。 */
+/** 一場是否已經打完。 */
 function isFinished(round            , length            )          {
   return round.dealerRotations >= 4 * ROUNDS_IN[length];
 }
 
 /**
- * 人手 override：直接跳去指定嘅圈同局。
+ * 手動 override：直接跳至指定的圈與局。
  *
- * 真實牌局一定會擺烏龍（記漏一鋪、莊家搞錯、開局揀錯位），
- * 所以狀態機一定要改得到。因為成個局面由 dealerRotations 一個數決定，
- * override 就係算返個數出嚟，唔會出現圈／局／莊家唔同步。
+ * 真實牌局難免出錯（漏記一鋪、莊家算錯、開局選錯位），
+ * 因此狀態機必須可以修改。由於整個局面僅由 dealerRotations 這一個數值決定，
+ * override 只需重新算出這個數值，就不會出現圈／局／莊家不同步的情況。
  */
 function setRound(
   round            ,
@@ -887,7 +903,7 @@ function setRound(
   };
 }
 
-/** 人手指定莊家坐邊個位（保持喺同一個圈入面）。 */
+/** 手動指定莊家所坐的位置（保持在同一個圈內）。 */
 function setDealerSeat(round            , seat      )             {
   const wind = ((seat - round.startDealerSeat + 4) % 4)        ;
   return {
@@ -906,10 +922,10 @@ const { advance, dealerSeat } = __m_round;
 /**
  * 香港麻雀計分引擎。
  *
- * 番數 → 單位 → 過數表。三個參數（基數、級距、封頂）就砌得出全部常見玩法。
+ * 番數 → 單位 → 過數表。三個參數（基數、級距、封頂）即可組成所有常見玩法。
  *
- * 資料來源：番數級距同全銃／半銃找數，對照粵文維基〈廣東麻雀籌碼計法〉
- * 同傳統講法「閒家三番四個籌碼，全銃出銃者十六個」驗證。
+ * 資料來源：番數級距與全銃／半銃找數方式，對照粵文維基〈廣東麻雀籌碼計法〉
+ * 與傳統講法「閒家三番四個籌碼，全銃出銃者十六個」驗證。
  */
 
 
@@ -917,49 +933,49 @@ const { advance, dealerSeat } = __m_round;
 /** 級距。half = 半辣上（每兩番翻一倍），full = 辣辣上（每番翻一倍）。 */
                                         
 
-/** 找數制。full = 全銃（出銃者一人包），half = 半銃（出銃者雙份，其餘各一份）。 */
+/** 找數制。full = 全銃（出銃者一人全包），half = 半銃（出銃者雙份，其餘各一份）。 */
                                         
 
                         
                         
                
-                   
+                    
                   
-                        
+                         
                   
                    
                        
-                         
+                            
                                  
   
 
 /**
- * 香港嘅計分輸入：得一個番數，由玩家填。
+ * 香港的計分輸入：只有一個番數，由玩家填寫。
  *
- * ── 設計原則：引擎唔會推算任何番數 ──
+ * ── 設計原則：引擎不會推算任何番數 ──
  *
- * 呢個數係**最終番數**，即係玩家喺檯面講嗰個數，乜都計晒入去：
- * 牌型、正花、中發白、圈風門風、自摸嗰一番⋯⋯全部都係玩家自己加好先填。
+ * 這個數字是**最終番數**，也就是玩家在檯面上宣告的那個數，所有項目都已計入：
+ * 牌型、正花、中發白、圈風門風、自摸的那一番⋯⋯全部由玩家自行加總後再填入。
  *
- * 點解唔幫手計：加番嘅嘢太立立雜雜（正花一番、中發白一番、門風一番⋯⋯），
- * 而且張張檯例規唔同。要玩家逐樣剔返出嚟，仲慢過佢自己心算個總數。
- * 佢哋喺檯面本身就已經講緊「食你七番」——直接填七就最快。
+ * 為什麼不代為計算：加番的項目相當繁瑣（正花一番、中發白一番、門風一番⋯⋯），
+ * 而且每張檯的例規都不同。要玩家逐項勾選出來，反而比自己心算總數還慢。
+ * 他們在檯面上本來就已經說「食你七番」——直接填七最快。
  *
- * 呢條原則適用於全部玩法：香港嘅番、台灣嘅台、日麻嘅翻同符，
- * 引擎一律當係輸入，唔會自己推算。
+ * 這條原則適用於所有玩法：香港的番、台灣的台、日麻的翻與符，
+ * 引擎一律視為輸入，不會自行推算。
  */
                                        
 
                                          
 
 /**
- * 半辣上嘅倍數數列：1, 2, 3, 4, 6, 8, 12, 16, 24, 32 …
+ * 半辣上的倍數數列：1, 2, 3, 4, 6, 8, 12, 16, 24, 32 …
  *
- * 即係由第三項開始每兩步翻一倍。呢個數列就係「半辣上」四個字嘅全部意思。
+ * 即由第三項開始每兩步翻一倍。這個數列就是「半辣上」四個字的全部含義。
  */
 function halfStepMultiplier(k        )         {
   if (!Number.isInteger(k) || k < 0) {
-    throw new RangeError(`級距索引要係 0 或以上嘅整數，收到 ${k}`);
+    throw new RangeError(`級距索引須為 0 或以上的整數，收到 ${k}`);
   }
   const m = [1, 2, 3];
   while (m.length <= k) m.push(2 * m[m.length - 2] );
@@ -969,15 +985,15 @@ function halfStepMultiplier(k        )         {
 /**
  * 番數 → 單位（基本點）。
  *
- * 番數超過封頂就當封頂計（滿糊）。唔夠起糊就係錯——引擎唔會靜雞雞當佢啱，
- * 因為「唔夠番食糊」係規則問題，唔應該計出個數嚟。
+ * 番數超過封頂就以封頂計算（滿糊）。不足起糊即為錯誤——引擎不會悄悄視為合法，
+ * 因為「番數不足以食糊」屬於規則問題，不應該計算出結果。
  */
 function unitFor(faan        , config          )         {
   if (!Number.isInteger(faan)) {
-    throw new RangeError(`番數要係整數，收到 ${faan}`);
+    throw new RangeError(`番數須為整數，收到 ${faan}`);
   }
   if (faan < config.minFaan) {
-    throw new RangeError(`${faan} 番唔夠 ${config.minFaan} 番起糊`);
+    throw new RangeError(`${faan} 番不足 ${config.minFaan} 番起糊`);
   }
   const k = Math.min(faan, config.maxFaan) - config.minFaan;
   return config.scale === 'full'
@@ -985,7 +1001,7 @@ function unitFor(faan        , config          )         {
     : config.base * halfStepMultiplier(k);
 }
 
-/** 由起糊到滿糊嘅完整單位表，用嚟顯示同對數。 */
+/** 由起糊到滿糊的完整單位表，用於顯示與核對數字。 */
 function unitTable(config          )                                   {
   const out = [];
   for (let f = config.minFaan; f <= config.maxFaan; f++) {
@@ -994,7 +1010,7 @@ function unitTable(config          )                                   {
   return out;
 }
 
-/** 一件事嘅過數表。加落總表度。 */
+/** 單一事件的過數結果。累加至總表中。 */
 function applyEvent(
   deltas        ,
   ev         ,
@@ -1003,33 +1019,33 @@ function applyEvent(
   switch (ev.kind) {
     case 'win': {
       const selfDraw = ev.from === 'selfDraw';
-      // 玩家填幾多就係幾多。引擎唔會加、唔會推算——見 HKScore 嘅註解。
+      // 玩家填多少就是多少。引擎不會加算、不會推算——見 HKScore 的註解。
       const unit = unitFor(ev.score.faan, config);
 
       if (ev.pao !== undefined && !selfDraw) {
-        throw new RangeError('包自摸淨係自摸至用得，出銃嗰鋪唔啱用');
+        throw new RangeError('包自摸只限自摸時使用，出銃那鋪不適用');
       }
       if (ev.pao === ev.winner) {
-        throw new RangeError('包自摸嘅人唔可以係贏家自己');
+        throw new RangeError('包自摸的人不可以是贏家自己');
       }
 
       if (ev.from === 'selfDraw' && ev.pao !== undefined) {
-        // 包自摸：贏家收嘅總數同三家自摸一樣（6 份），
-        // 淨係唔洗三家分擔，一個人孭晒。
+        // 包自摸：贏家收取的總數與三家自摸相同（6 份），
+        // 只是不用由三家分攤，改由一人全額承擔。
         deltas[ev.pao] -= 6 * unit;
         deltas[ev.winner] += 6 * unit;
       } else if (ev.from === 'selfDraw') {
-        // 自摸：三家各畀兩份（兩制相同）
+        // 自摸：三家各付兩份（兩種找數制相同）
         for (const s of otherSeats(ev.winner)) {
           deltas[s] -= 2 * unit;
           deltas[ev.winner] += 2 * unit;
         }
       } else if (config.liability === 'full') {
-        // 全銃：出銃者一人畀四份
+        // 全銃：出銃者一人付四份
         deltas[ev.from] -= 4 * unit;
         deltas[ev.winner] += 4 * unit;
       } else {
-        // 半銃：出銃者雙份，其餘兩家各一份
+        // 半銃：出銃者雙份，其餘兩家各付一份
         deltas[ev.from] -= 2 * unit;
         deltas[ev.winner] += 2 * unit;
         for (const s of otherSeats(ev.winner)) {
@@ -1042,7 +1058,7 @@ function applyEvent(
     }
 
     case 'draw':
-      // 香港流局唔使找數。真正影響喺莊家連定落，見 nextRound。
+      // 香港流局不用找數。真正的影響在於莊家是否連莊，見 nextRound。
       break;
 
     case 'penalty': {
@@ -1056,21 +1072,21 @@ function applyEvent(
     case 'adjust': {
       const sum = ev.deltas.reduce((a, b) => a + b, 0);
       if (sum !== 0) {
-        throw new RangeError(`人手改數要加埋等於 0，而家係 ${sum}`);
+        throw new RangeError(`手動調整的總和要等於 0，目前是 ${sum}`);
       }
       for (const s of [0, 1, 2, 3]          ) deltas[s] += ev.deltas[s];
       break;
     }
 
     case 'kong':
-      throw new Error('槓牌即時收錢係跑馬仔玩法，香港麻雀唔用');
+      throw new Error('槓牌即時收錢是跑馬仔玩法的規則，香港麻雀不適用');
   }
 }
 
 /**
- * 結算一鋪牌。純函數，冇 side effect。
+ * 結算一局牌。純函式，無副作用。
  *
- * 回傳過數表同下一鋪嘅局面。過數表加埋一定等於 0。
+ * 回傳過數表與下一局的局面。過數表加總必然等於 0。
  */
 function settle(
   events           ,
@@ -1078,7 +1094,7 @@ function settle(
   config          ,
 )                                            {
   if (events.length === 0) {
-    throw new RangeError('一鋪牌至少要有一件事（食糊或者流局）');
+    throw new RangeError('一局牌至少要有一件事件（食糊或流局）');
   }
 
   const deltas = ZERO_DELTAS();
@@ -1086,7 +1102,7 @@ function settle(
 
   const sum = deltas.reduce((a, b) => a + b, 0);
   if (sum !== 0) {
-    throw new Error(`內部錯誤：過數表加埋等於 ${sum}，應該係 0`);
+    throw new Error(`內部錯誤：過數表加總為 ${sum}，應該為 0`);
   }
 
   const dealer = dealerSeat(round);
@@ -1097,7 +1113,7 @@ function settle(
   return { deltas, nextRound: advance(round, dealerKeeps) };
 }
 
-/** 你 app screenshot 入面嗰七個玩法。 */
+/** App 截圖中的那七個玩法。 */
 const PRESETS                           = {
   '3番4 半辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
   '3番4 辣辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
@@ -1107,7 +1123,7 @@ const PRESETS                           = {
   '五一 辣辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
 };
 
-/** 自訂玩法嘅起點。用家由呢度開始改。 */
+/** 自訂玩法的起點。使用者由此開始調整。 */
 const CUSTOM_TEMPLATE           = {
   base: 8,
   minFaan: 3,
@@ -1117,17 +1133,17 @@ const CUSTOM_TEMPLATE           = {
   dealerContinuesOnDraw: true,
 };
 
-/** 封頂番數揀得幾多。八番滿糊最常見，但有人打到十三番。 */
+/** 封頂番數可選的範圍。八番滿糊最常見，但也有人打到十三番。 */
 const MAX_FAAN_CHOICES = [8, 9, 10, 11, 12, 13];
 
 /**
- * 由「某個番數想打幾大」反推基數。
+ * 由「某個番數想打多大」反推基數。
  *
- * 玩家心目中通常唔係諗「基數幾多」，而係「食你八番收幾多」。
- * 所以俾佢揀一個番數同一個銀碼，其餘成張表由級距規則自動跳。
+ * 玩家心目中通常想的不是「基數是多少」，而是「食你八番收多少」。
+ * 因此讓玩家選一個番數與一個金額，其餘整張表由級距規則自動推算。
  *
- * 除唔盡就取最接近嘅整數（基數一定要係整數，唔係嘅話成張表會出現小數）。
- * 取完之後真正嘅銀碼可能同輸入唔同，所以一定要 render 返成張表俾人睇。
+ * 除不盡時取最接近的整數（基數必須為整數，否則整張表會出現小數）。
+ * 取整後實際的金額可能與輸入不同，因此務必要把整張表重新算出並顯示給使用者看。
  */
 function baseForAnchor(
   anchorFaan        ,
@@ -1135,23 +1151,23 @@ function baseForAnchor(
   config                                                 ,
 )         {
   if (!Number.isFinite(amount) || amount <= 0) {
-    throw new RangeError(`銀碼要大過 0，收到 ${amount}`);
+    throw new RangeError(`金額須大於 0，收到 ${amount}`);
   }
   if (anchorFaan < config.minFaan || anchorFaan > config.maxFaan) {
-    throw new RangeError(`${anchorFaan} 番唔喺 ${config.minFaan}–${config.maxFaan} 範圍入面`);
+    throw new RangeError(`${anchorFaan} 番不在 ${config.minFaan}–${config.maxFaan} 範圍內`);
   }
   const k = anchorFaan - config.minFaan;
   const m = config.scale === 'full' ? 2 ** k : halfStepMultiplier(k);
   return Math.max(1, Math.round(amount / m));
 }
 
-/** 檢查一個自訂玩法合唔合理。回一句人話，冇問題就回 null。 */
+/** 檢查一個自訂玩法是否合理。回傳一句說明；沒問題則回傳 null。 */
 function validateConfig(config          )                {
-  if (!Number.isInteger(config.base) || config.base < 1) return '基數要係 1 或以上嘅整數';
-  if (!Number.isInteger(config.minFaan) || config.minFaan < 1) return '起糊番數要係 1 或以上';
-  if (!Number.isInteger(config.maxFaan)) return '封頂番數要係整數';
-  if (config.maxFaan < config.minFaan) return '封頂番數唔可以細過起糊番數';
-  if (config.maxFaan - config.minFaan > 20) return '封頂同起糊爭太遠，個表會長到冇用';
+  if (!Number.isInteger(config.base) || config.base < 1) return '基數須為 1 或以上的整數';
+  if (!Number.isInteger(config.minFaan) || config.minFaan < 1) return '起糊番數須為 1 或以上';
+  if (!Number.isInteger(config.maxFaan)) return '封頂番數須為整數';
+  if (config.maxFaan < config.minFaan) return '封頂番數不可小於起糊番數';
+  if (config.maxFaan - config.minFaan > 20) return '封頂與起糊相差過大，表格會長到失去意義';
   return null;
 }
 
@@ -1164,32 +1180,32 @@ const { advance, dealerSeat } = __m_round;
 /**
  * 台灣麻將計分引擎。
  *
- * 公式一行就講完：**每個付錢嘅人畀「底 + 台 × 台數」**。
- * 難嘅唔係條式，係莊家台。
+ * 公式一行就能講完：**每個付錢的人支付「底 + 台 × 台數」**。
+ * 難的不是公式本身，而是莊家台。
  *
- * 資料來源：台灣麻將維基同常見台數表；連莊 2N+1（連一拉一 3台、連二拉二 5台）。
+ * 資料來源：台灣麻將維基與常見台數表；連莊 2N+1（連一拉一 3台、連二拉二 5台）。
  */
 
 
 
-/** 台灣嘅計分輸入：玩家自己數嘅台數（唔包莊家台）。 */
+/** 台灣的計分輸入：玩家自行數出的台數（不含莊家台）。 */
                                       
 
                                          
 
 /**
- * 莊家台：基本 1 台，連莊 N 次就 2N+1 台
- * （連一拉一 3台、連二拉二 5台，如此類推）。
+ * 莊家台：基本 1 台，連莊 N 次即為 2N+1 台
+ * （連一拉一 3台、連二拉二 5台，以此類推）。
  */
 function dealerTai(round            )         {
   return 2 * round.consecutive + 1;
 }
 
 /**
- * 一個人要畀幾多。
+ * 一個人要支付多少。
  *
- * 莊家台只計喺**有莊家份嗰條數**度——即係莊家贏（人人畀佢），
- * 或者莊家畀錢（佢放槍／人哋自摸）。莊家冇份嗰筆唔加。
+ * 莊家台只計入**有莊家參與的那筆款項**——也就是莊家贏（人人付給他），
+ * 或莊家出錢（他放槍／別人自摸）。莊家未參與的那筆不加計。
  */
 function payment(
   payer      ,
@@ -1199,7 +1215,7 @@ function payment(
   config          ,
 )         {
   if (!Number.isInteger(tai) || tai < 0) {
-    throw new RangeError(`台數要係 0 或以上嘅整數，收到 ${tai}`);
+    throw new RangeError(`台數須為 0 或以上的整數，收到 ${tai}`);
   }
   const dealer = dealerSeat(round);
   const involvesDealer = payer === dealer || winner === dealer;
@@ -1217,14 +1233,14 @@ function applyEvent(
     case 'win': {
       const tai = ev.score.tai;
       if (ev.from === 'selfDraw') {
-        // 自摸：三家各畀一份
+        // 自摸：三家各付一份
         for (const s of otherSeats(ev.winner)) {
           const amount = payment(s, ev.winner, tai, round, config);
           deltas[s] -= amount;
           deltas[ev.winner] += amount;
         }
       } else {
-        // 放槍：淨係出銃嗰個畀
+        // 放槍：只由出銃者支付
         const amount = payment(ev.from, ev.winner, tai, round, config);
         deltas[ev.from] -= amount;
         deltas[ev.winner] += amount;
@@ -1245,14 +1261,14 @@ function applyEvent(
     case 'adjust': {
       const sum = ev.deltas.reduce((a, b) => a + b, 0);
       if (sum !== 0) {
-        throw new RangeError(`人手改數要加埋等於 0，而家係 ${sum}`);
+        throw new RangeError(`手動改數加總須為 0，目前為 ${sum}`);
       }
       for (const s of [0, 1, 2, 3]          ) deltas[s] += ev.deltas[s];
       break;
     }
 
     case 'kong':
-      throw new Error('槓牌即時收錢係跑馬仔玩法，台灣麻將唔用');
+      throw new Error('槓牌即時收錢是跑馬仔玩法的規則，台灣麻將不適用');
   }
 }
 
@@ -1262,7 +1278,7 @@ function settle(
   config          ,
 )                                            {
   if (events.length === 0) {
-    throw new RangeError('一鋪牌至少要有一件事（食糊或者流局）');
+    throw new RangeError('一局牌至少要有一件事件（食糊或流局）');
   }
 
   const deltas = ZERO_DELTAS();
@@ -1270,7 +1286,7 @@ function settle(
 
   const sum = deltas.reduce((a, b) => a + b, 0);
   if (sum !== 0) {
-    throw new Error(`內部錯誤：過數表加埋等於 ${sum}，應該係 0`);
+    throw new Error(`內部錯誤：過數表加總為 ${sum}，應該為 0`);
   }
 
   const dealer = dealerSeat(round);
@@ -1282,7 +1298,7 @@ function settle(
   };
 }
 
-/** 你 app screenshot 入面嗰啲台灣玩法。 */
+/** App 截圖中的那些台灣玩法。 */
 const TW_PRESETS                           = {
   '100底20台': { base: 100, tai: 20, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
   '50底20台': { base: 50, tai: 20, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
@@ -1301,14 +1317,14 @@ const { dealerTai } = __m_tw;
 /**
  * 港式台灣麻將計分引擎。
  *
- * 底盤同台灣麻將一模一樣：**每個付錢嘅人畀「底 + 台 × 台數」**，
- * 莊家台一樣係 2N+1（連一拉一 3台、連二拉二 5台）。
+ * 底盤與台灣麻將完全相同：**每個付錢的人支付「底 + 台 × 台數」**，
+ * 莊家台同樣是 2N+1（連一拉一 3台、連二拉二 5台）。
  *
- * 喺呢個底盤上面加多一樣香港嘢：**包自摸**（見 hk.ts 嘅 `pao`）。
- * 淨係自摸至用得——包自摸嗰個人一腳踢晒本來三家自摸應該畀嘅總數，
- * 其餘兩家唔使畀。因為台灣嘅莊家台可能令三家本來要畀嘅數唔一樣
- * （莊家自摸三家都加莊家台；閒家自摸淨係嗰個做莊嘅閒家加），
- * 所以包自摸嘅總數係「三家本來應付總和」，唔係「一份 × 3」咁簡單瞓身乘。
+ * 在這個底盤上再加入一項香港元素：**包自摸**（見 hk.ts 的 `pao`）。
+ * 只在自摸時適用——包自摸的那個人獨自承擔原本三家自摸應付的總數，
+ * 其餘兩家不用支付。由於台灣的莊家台可能使三家原本應付的金額不一致
+ * （莊家自摸時三家都加計莊家台；閒家自摸時只有做莊的那家加計），
+ * 因此包自摸的總數是「三家原本應付金額的總和」，而非單純以「一份 × 3」相乘。
  */
 
 
@@ -1321,26 +1337,26 @@ const { dealerTai } = __m_tw;
                
                
               
-                    
+                     
                  
-                                      
+                                       
                          
-                
+                  
                                  
   
 
-/** 港式台灣嘅計分輸入：玩家自己數嘅台數（唔包莊家台）。 */
+/** 港式台灣的計分輸入：玩家自行數出的台數（不含莊家台）。 */
                                         
 
 /**
- * 一鋪牌可以有嘅事：同 tw.ts 一樣嘅 win/draw/penalty/adjust，
- * 但 `win` 事件多咗個 `pao`（見 types.ts `HandEvent` 嘅註解）。
+ * 一局牌可能發生的事件：與 tw.ts 相同的 win/draw/penalty/adjust，
+ * 但 `win` 事件多了一個 `pao`（見 types.ts `HandEvent` 的註解）。
  */
                                              
 
 /**
- * 一個人要畀幾多。同 tw.ts 嘅 `payment()` 一樣：
- * 莊家台只計喺有莊家份嗰條數度（莊家贏，或者莊家畀錢）。
+ * 一個人要支付多少。與 tw.ts 的 `payment()` 相同：
+ * 莊家台只計入有莊家參與的那筆款項（莊家贏，或莊家出錢）。
  */
 function payment(
   payer      ,
@@ -1350,7 +1366,7 @@ function payment(
   config            ,
 )         {
   if (!Number.isInteger(tai) || tai < 0) {
-    throw new RangeError(`台數要係 0 或以上嘅整數，收到 ${tai}`);
+    throw new RangeError(`台數須為 0 或以上的整數，收到 ${tai}`);
   }
   const dealer = dealerSeat(round);
   const involvesDealer = payer === dealer || winner === dealer;
@@ -1370,17 +1386,17 @@ function applyEvent(
       const selfDraw = ev.from === 'selfDraw';
 
       if (ev.pao !== undefined && !selfDraw) {
-        throw new RangeError('包自摸淨係自摸至用得，出銃嗰鋪唔啱用');
+        throw new RangeError('包自摸只在自摸時適用，出銃的情況不適用');
       }
       if (ev.pao === ev.winner) {
-        throw new RangeError('包自摸嘅人唔可以係贏家自己');
+        throw new RangeError('包自摸的人不可以是贏家自己');
       }
 
       if (selfDraw && ev.pao !== undefined) {
-        // 包自摸：贏家收嘅總數同正常自摸三家埋單一樣，
-        // 淨係唔洗三家分擔，一個人孭晒。
-        // 因為莊家台可能令三家本來嘅數唔一樣（見文件頭註解），
-        // 所以要逐家計完先加埋，唔可以直接乘 3。
+        // 包自摸：贏家收取的總數與正常自摸三家結算的總額相同，
+        // 只是不用由三家分攤，改由一人全額承擔。
+        // 由於莊家台可能使三家原本的金額不一致（見檔案開頭的註解），
+        // 因此須逐家算完後再加總，不可直接乘 3。
         let total = 0;
         for (const s of otherSeats(ev.winner)) {
           total += payment(s, ev.winner, tai, round, config);
@@ -1388,14 +1404,14 @@ function applyEvent(
         deltas[ev.pao] -= total;
         deltas[ev.winner] += total;
       } else if (selfDraw) {
-        // 自摸：三家各畀自己嗰份
+        // 自摸：三家各付自己的那份
         for (const s of otherSeats(ev.winner)) {
           const amount = payment(s, ev.winner, tai, round, config);
           deltas[s] -= amount;
           deltas[ev.winner] += amount;
         }
       } else {
-        // 放槍：淨係出銃嗰個畀
+        // 放槍：只由出銃者支付
         const amount = payment(ev.from        , ev.winner, tai, round, config);
         deltas[ev.from        ] -= amount;
         deltas[ev.winner] += amount;
@@ -1416,14 +1432,14 @@ function applyEvent(
     case 'adjust': {
       const sum = ev.deltas.reduce((a, b) => a + b, 0);
       if (sum !== 0) {
-        throw new RangeError(`人手改數要加埋等於 0，而家係 ${sum}`);
+        throw new RangeError(`手動改數加總須為 0，目前為 ${sum}`);
       }
       for (const s of [0, 1, 2, 3]          ) deltas[s] += ev.deltas[s];
       break;
     }
 
     case 'kong':
-      throw new Error('槓牌即時收錢係跑馬仔玩法，港式台灣麻將唔用');
+      throw new Error('槓牌即時收錢是跑馬仔玩法的規則，港式台灣麻將不適用');
   }
 }
 
@@ -1433,7 +1449,7 @@ function settle(
   config            ,
 )                                            {
   if (events.length === 0) {
-    throw new RangeError('一鋪牌至少要有一件事（食糊或者流局）');
+    throw new RangeError('一局牌至少要有一件事件（食糊或流局）');
   }
 
   const deltas = ZERO_DELTAS();
@@ -1441,7 +1457,7 @@ function settle(
 
   const sum = deltas.reduce((a, b) => a + b, 0);
   if (sum !== 0) {
-    throw new Error(`內部錯誤：過數表加埋等於 ${sum}，應該係 0`);
+    throw new Error(`內部錯誤：過數表加總為 ${sum}，應該為 0`);
   }
 
   const dealer = dealerSeat(round);
@@ -1453,7 +1469,7 @@ function settle(
   };
 }
 
-/** 港式台灣常見玩法。 */
+/** 港式台灣麻將常見玩法。 */
 const HKTW_PRESETS                             = {
   '港式100底20台': { base: 100, tai: 20, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
   '港式50底20台': { base: 50, tai: 20, maxTai: 16, autoDealerTai: true, dealerContinuesOnDraw: true },
@@ -1472,35 +1488,35 @@ const { advance, dealerSeat } = __m_round;
 /**
  * 跑馬仔（槓牌即時收錢）計分引擎。
  *
- * 呢個玩法 = 香港番數過數表（原封不動由 hk.ts 攞嚟用），
- * 加多一件事：槓牌嗰刻即時收錢，唔使等到糊嗰鋪先埋單。
+ * 這個玩法 = 香港番數過數表（原封不動取自 hk.ts），
+ * 再加一件事：槓牌當下即時收錢，不必等到食糊那局才結算。
  *
- * 「1 個槓收幾多」用緊 `unitFor(config.minFaan, config)` 嗰個單位嚟做基準
- * ——即係起糊嗰個番數嘅籌碼數。呢個係本檔案自己揀嘅一個具體詮釋
- * （跑馬仔檯例規五花八門，呢度用最常見嘅講法）：
+ * 「一個槓收多少」以 `unitFor(config.minFaan, config)` 這個單位作為基準
+ * ——也就是起糊那個番數的籌碼數。這是本檔案自行採用的一種具體詮釋
+ * （跑馬仔的檯例五花八門，此處採用最常見的講法）：
  *
- *   暗槓：其餘三家每人畀 2 個「槓單位」
- *   明槓：其餘三家每人畀 1 個「槓單位」（`from` 淨係話俾邊個出嗰張，唔影響金額）
- *   加槓：其餘三家每人畀 1 個「槓單位」，同明槓一樣
+ *   暗槓：其餘三家每人付 2 個「槓單位」
+ *   明槓：其餘三家每人付 1 個「槓單位」（`from` 只是說明由誰出的那張牌，不影響金額）
+ *   加槓：其餘三家每人付 1 個「槓單位」，與明槓相同
  *
- * 食糊（win 事件）嘅結算完全照抄 hk.ts：出銃／自摸／包自摸邏輯
- * 一概唔重寫，直接攞 hk.ts 嘅 settle() 過嗰批 win/draw/penalty/adjust 事件。
+ * 食糊（win 事件）的結算完全沿用 hk.ts：出銃／自摸／包自摸的邏輯
+ * 一律不重寫，直接把 hk.ts 的 settle() 用於處理 win/draw/penalty/adjust 事件。
  */
 
 
 
 
-/** 跑馬仔用嘅 config，形狀同 hk.ts 一模一樣（起糊、封頂、級距、找數制、流局連莊）。 */
+/** 跑馬仔使用的 config，形狀與 hk.ts 完全相同（起糊、封頂、級距、找數制、流局連莊）。 */
                                    
 
-/** 計分輸入同香港一樣：得一個番數，由玩家填。 */
+/** 計分輸入與香港相同：只有一個番數，由玩家填寫。 */
                                           
 
 /**
- * 跑馬仔嘅事件型別。
+ * 跑馬仔的事件型別。
  *
- * HandEvent<S> 個 union 本身已經有 'kong' 呢個分支（同 S 無關），
- * 所以 HKEvent 其實已經包晒 kong 事件——hk.ts 淨係喺 runtime 拒收佢。
+ * HandEvent<S> 這個聯合型別本身已經有 'kong' 這個分支（與 S 無關），
+ * 因此 HKEvent 其實已經包含 kong 事件——hk.ts 只是在執行期拒收它。
  */
                                  
 
@@ -1509,12 +1525,12 @@ const { advance, dealerSeat } = __m_round;
 const KONG_TYPES = ['明', '加', '暗']         ;
                                             
 
-/** 一個槓，其餘三家每人要畀幾多個「槓單位」。暗槓兩份，明／加槓一份。 */
+/** 一個槓，其餘三家每人要支付多少個「槓單位」。暗槓兩份，明／加槓一份。 */
 function kongMultiplier(kongType          )         {
   return kongType === '暗' ? 2 : 1;
 }
 
-/** 槓牌即時過數：其餘三家各畀 by 若干個「槓單位」。 */
+/** 槓牌即時過數：其餘三家各付 by 若干個「槓單位」。 */
 function applyKong(
   deltas        ,
   ev                                       ,
@@ -1522,7 +1538,7 @@ function applyKong(
 )       {
   if (!KONG_TYPES.includes(ev.kongType            )) {
     throw new RangeError(
-      `槓型要係 明／加／暗 三者之一，收到 ${String(ev.kongType)}`,
+      `槓型須為 明／加／暗 三者之一，收到 ${String(ev.kongType)}`,
     );
   }
   const unit = unitFor(config.minFaan, config);
@@ -1534,11 +1550,11 @@ function applyKong(
 }
 
 /**
- * 結算一鋪牌。純函數，冇 side effect。
+ * 結算一局牌。純函式，無副作用。
  *
- * 一鋪牌可以有幾件收錢事：幾次槓（即時過數）+ 最尾一件食糊或者流局
- * （亦都可以夾埋罰錢、人手改數）。槓事件本檔案自己處理，
- * 其餘全部原封不動交返俾 hk.ts 嘅 settle() 計。
+ * 一局牌可能有多筆收錢事件：多次槓牌（即時過數）+ 最後一件食糊或流局
+ * （也可能夾雜罰錢、手動改數）。槓牌事件由本檔案自行處理，
+ * 其餘全部原封不動交由 hk.ts 的 settle() 計算。
  */
 function settle(
   events              ,
@@ -1546,7 +1562,7 @@ function settle(
   config             ,
 )                                            {
   if (events.length === 0) {
-    throw new RangeError('一鋪牌至少要有一件事（食糊、流局或者槓牌）');
+    throw new RangeError('一局牌至少要有一件事件（食糊、流局或槓牌）');
   }
 
   const kongEvents = events.filter(
@@ -1558,14 +1574,14 @@ function settle(
   for (const ev of kongEvents) applyKong(deltas, ev, config);
 
   if (otherEvents.length > 0) {
-    // 借 hk.ts 嘅 settle() 計晒 win/draw/penalty/adjust，一啲都唔重寫佢嘅邏輯。
+    // 借用 hk.ts 的 settle() 計算 win/draw/penalty/adjust，完全不重寫其邏輯。
     const { deltas: rest } = hkSettle(otherEvents, round, config);
     for (const s of [0, 1, 2, 3]          ) deltas[s] += rest[s];
   }
 
   const sum = deltas.reduce((a, b) => a + b, 0);
   if (sum !== 0) {
-    throw new Error(`內部錯誤：過數表加埋等於 ${sum}，應該係 0`);
+    throw new Error(`內部錯誤：過數表加總為 ${sum}，應該為 0`);
   }
 
   const dealer = dealerSeat(round);
@@ -1576,7 +1592,7 @@ function settle(
   return { deltas, nextRound: advance(round, dealerKeeps) };
 }
 
-/** 跑馬仔常見玩法，槓數同 hk.ts 嘅 3番4／二五雞／五一 共用同一套番數表。 */
+/** 跑馬仔常見玩法，槓數與 hk.ts 的 3番4／二五雞／五一 共用同一套番數表。 */
 const PAOMA_PRESETS                              = {
   '跑馬仔3番4 半辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
   '跑馬仔3番4 辣辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
@@ -1594,34 +1610,34 @@ const { advance, dealerSeat } = __m_round;
 /**
  * 日本麻雀（riichi）計分引擎。
  *
- * 同香港、台灣一樣：引擎唔會計任何番（役）或符——玩家喺檯面傾好幾多翻幾多符，
- * 之後淨係做標準嘅「符×2^(2+翻) → 過數表」呢條全球通用嘅公式，同符幾多蚊、
- * 邊個畀邊個收。呢條唔算「自己計番」，同 hk.ts 嘅 unitFor() 一樣，
- * 純粹係將玩家填好嘅數字轉做過數金額。
+ * 與香港、台灣相同：引擎不會計算任何役或符——玩家在檯面上先商議好多少翻多少符，
+ * 之後只執行標準的「符×2^(2+翻) → 過數表」這條全球通用的公式，計算每符值多少錢、
+ * 由誰付給誰。這不算「代為計番」，與 hk.ts 的 unitFor() 相同，
+ * 純粹是把玩家填好的數字轉換成過數金額。
  *
- * 已知簡化：未做立直棒（供托）嘅檯面過數同宣言立直事件——
- * 呢樣需要改 shared types（`RoundState.riichiSticks`），唔喺呢次任務範圍內，留返下次做。
+ * 已知的簡化之處：尚未實作立直棒（供託）的檯面過數與宣告立直事件——
+ * 這需要修改共用型別（`RoundState.riichiSticks`），不在本次任務範圍內，留待下次處理。
  *
- * 資料來源：標準日麻點數表（基本點 = 符 × 2^(2+翻)，5 翻或以上用滿貫／
- * 跳滿／倍滿／三倍滿／役滿嘅固定基本點級距），呢張表同埋四捨五入去到
- * 百位嘅找數方式喺絕大多數日麻例規（包括天鳳、雀魂、日本麻將連盟）都一致。
+ * 資料來源：標準日麻點數表（基本點 = 符 × 2^(2+翻)，5 翻以上使用滿貫／
+ * 跳滿／倍滿／三倍滿／役滿的固定基本點級距），這張表以及進位到
+ * 百位的找數方式，在絕大多數日麻例規（包括天鳳、雀魂、日本麻將連盟）中都是一致的。
  */
 
 
 
-/** 日麻嘅計分輸入：翻同符，由玩家自己傾好填。 */
+/** 日麻的計分輸入：翻與符，由玩家自行商議好後填寫。 */
                                                       
 
                                                  
 
 /**
- * 呢個玩法暫時冇任何檯面設定好改——起始點數、立直棒呢啲屬於場次／
- * session 層面，唔屬於 settle() 呢個純函數。留低呢個型別（同 RIICHI_PRESETS）
- * 淨係為咗同 hk.ts / tw.ts 嘅形狀保持一致。
+ * 這個玩法目前沒有任何檯面設定可調整——起始點數、立直棒這類屬於場次／
+ * session 層面，不屬於 settle() 這個純函式的範疇。保留這個型別（與 RIICHI_PRESETS）
+ * 只是為了與 hk.ts / tw.ts 的形狀保持一致。
  */
                                                  
 
-/** 個位進一百。日麻找數永遠進位，唔會四捨五入。 */
+/** 進位到百位。日麻找數一律無條件進位，不會四捨五入。 */
 function roundUp100(n        )         {
   return Math.ceil(n / 100) * 100;
 }
@@ -1629,18 +1645,18 @@ function roundUp100(n        )         {
 /**
  * 翻符 → 基本點。
  *
- * 5 翻或以上唔理符數，直接用滿貫／跳滿／倍滿／三倍滿／役滿嘅固定級距。
- * 3、4 翻如果條公式 fu × 2^(2+han) 算出嚟超過 2000，封頂 2000
- * （呢個純粹係公式本身嘅硬封頂，唔係「切上げ滿貫」嗰種人為湊整——
- * 細過 2000 嘅唔會被搓大）。
+ * 5 翻以上不理會符數，直接使用滿貫／跳滿／倍滿／三倍滿／役滿的固定級距。
+ * 3、4 翻若以公式 fu × 2^(2+han) 算出的結果超過 2000，則封頂為 2000
+ * （這純粹是公式本身的硬性封頂，不是「切上げ滿貫」那種人為湊整——
+ * 小於 2000 的不會被拉高）。
  */
 function basePoints(han        , fu        )         {
   if (!Number.isInteger(han) || han < 1) {
-    throw new RangeError(`翻數要係 1 或以上嘅整數，收到 ${han}`);
+    throw new RangeError(`翻數須為 1 或以上的整數，收到 ${han}`);
   }
   if (!Number.isInteger(fu) || fu < 20 || (fu % 10 !== 0 && fu !== 25)) {
     throw new RangeError(
-      `符數要係 20 或以上、10 嘅倍數（七對子 25 符例外），收到 ${fu}`,
+      `符數須為 20 或以上、10 的倍數（七對子 25 符例外），收到 ${fu}`,
     );
   }
 
@@ -1662,7 +1678,7 @@ function applyWin(
   round            ,
 )       {
   if (ev.pao !== undefined) {
-    throw new Error('呢個玩法暫時未支援包牌（pao）');
+    throw new Error('此玩法暫未支援包牌（pao）');
   }
 
   const bp = basePoints(ev.score.han, ev.score.fu);
@@ -1671,8 +1687,8 @@ function applyWin(
   const honba = round.consecutive;
 
   if (ev.from === 'selfDraw') {
-    // 自摸：莊家自摸每家 2 份；閒家自摸莊家 2 份、其餘閒家各 1 份。
-    // 本場每人加 100 × 連莊（三家分擔 300 × 連莊）。
+    // 自摸：莊家自摸每家付 2 份；閒家自摸則莊家付 2 份、其餘閒家各付 1 份。
+    // 本場每人加付 100 × 連莊（三家合計分擔 300 × 連莊）。
     for (const s of otherSeats(ev.winner)) {
       const mult = dealerWon || s === dealer ? 2 : 1;
       const amount = roundUp100(bp * mult) + 100 * honba;
@@ -1680,8 +1696,8 @@ function applyWin(
       deltas[ev.winner] += amount;
     }
   } else {
-    // 出銃：莊家食糊 6 份，閒家食糊 4 份，出銃者一個人畀晒。
-    // 本場加 300 × 連莊，一樣全由出銃者孭。
+    // 出銃：莊家食糊收 6 份，閒家食糊收 4 份，全部由出銃者一人支付。
+    // 本場加付 300 × 連莊，同樣全由出銃者承擔。
     const mult = dealerWon ? 6 : 4;
     const amount = roundUp100(bp * mult) + 300 * honba;
     deltas[ev.from] -= amount;
@@ -1689,27 +1705,27 @@ function applyWin(
   }
 }
 
-/** 流局聽牌罰符：固定 3000 分嘅彩池，跟聽牌人數點分。 */
+/** 流局聽牌罰符：固定 3000 分的彩池，依聽牌人數分配。 */
 function applyDraw(
   deltas        ,
   ev                                        ,
 )       {
   const tenpai = ev.tenpai;
-  if (tenpai === undefined) return; // 冇講邊個聽牌 → 唔罰
+  if (tenpai === undefined) return; // 未說明誰聽牌 → 不罰
 
   const seen = new Set      ();
   for (const s of tenpai) {
     if (!SEATS.includes(s)) {
-      throw new RangeError(`聽牌座位要係 0–3，收到 ${s}`);
+      throw new RangeError(`聽牌座位須為 0–3，收到 ${s}`);
     }
     if (seen.has(s)) {
-      throw new RangeError(`聽牌座位唔可以重複，收到 ${JSON.stringify(tenpai)}`);
+      throw new RangeError(`聽牌座位不可以重複，收到 ${JSON.stringify(tenpai)}`);
     }
     seen.add(s);
   }
 
   const n = tenpai.length;
-  if (n === 0 || n === 4) return; // 全部聽或者全部唔聽 → 唔使罰
+  if (n === 0 || n === 4) return; // 全部聽牌或全部未聽 → 不需要罰
 
   const notenSeats = SEATS.filter((s) => !seen.has(s));
 
@@ -1746,34 +1762,34 @@ function applyEvent(deltas        , ev             , round            )       {
     case 'adjust': {
       const sum = ev.deltas.reduce((a, b) => a + b, 0);
       if (sum !== 0) {
-        throw new RangeError(`人手改數要加埋等於 0，而家係 ${sum}`);
+        throw new RangeError(`手動調整的總和要等於 0，目前是 ${sum}`);
       }
       for (const s of SEATS) deltas[s] += ev.deltas[s];
       break;
     }
 
     case 'kong':
-      throw new Error('槓牌即時收錢係跑馬仔玩法，日本麻雀唔用（立直棒／供托暫未支援）');
+      throw new Error('槓牌即時收錢是跑馬仔玩法的規則，日本麻雀不適用（立直棒／供託暫未支援）');
   }
 }
 
 /**
- * 結算一鋪牌。純函數，冇 side effect。
+ * 結算一局牌。純函式，無副作用。
  *
- * 莊家連莊：食糊（自摸或出銃）就連莊；流局嗰陣要莊家自己聽牌先連莊——
- * 呢樣同 hk.ts / tw.ts 嗰個簡單 boolean config 唔同，日麻嘅規矩本身就係
- * 「聽牌先連莊」。如果流局事件冇填 `tenpai`（唔知道邊個聽牌），
- * 保守處理做「莊家唔連莊」，唔會自動當佢聽咗。
+ * 莊家連莊：食糊（自摸或出銃）即連莊；流局時須莊家本身聽牌才連莊——
+ * 這與 hk.ts / tw.ts 那種簡單的 boolean config 不同，日麻的規則本身就是
+ * 「聽牌才連莊」。若流局事件未填寫 `tenpai`（不知道誰聽牌），
+ * 保守處理為「莊家不連莊」，不會自動視為他已聽牌。
  */
 function settle(
   events               ,
   round            ,
   config              ,
 )                                            {
-  void config; // 暫時冇嘢好讀，留返個位俾將來嘅設定
+  void config; // 目前沒有需要讀取的內容，保留此參數供未來的設定使用
 
   if (events.length === 0) {
-    throw new RangeError('一鋪牌至少要有一件事（食糊或者流局）');
+    throw new RangeError('一局牌至少要有一件事件（食糊或流局）');
   }
 
   const deltas = ZERO_DELTAS();
@@ -1781,7 +1797,7 @@ function settle(
 
   const sum = deltas.reduce((a, b) => a + b, 0);
   if (sum !== 0) {
-    throw new Error(`內部錯誤：過數表加埋等於 ${sum}，應該係 0`);
+    throw new Error(`內部錯誤：過數表加總為 ${sum}，應該為 0`);
   }
 
   const dealer = dealerSeat(round);
@@ -1793,7 +1809,7 @@ function settle(
   return { deltas, nextRound: advance(round, dealerKeeps) };
 }
 
-/** 標準日麻玩法。暫時冇任何可調參數。 */
+/** 標準日麻玩法。目前沒有任何可調參數。 */
 const RIICHI_PRESETS                               = {
   標準: {},
 };
@@ -1806,14 +1822,14 @@ const { ZERO_DELTAS } = __m_types;
 /**
  * 一場牌局：事件序列 → 分數。
  *
- * 只存事件，唔存分數。分數係即時 reduce 出嚟嘅，所以：
- *   還原 = 撳走最後一鋪
- *   改名 = 改 Player.name，歷史零影響
- *   換位 = 之後嘅 seats 換次序，舊牌各自帶住自己嗰份快照
+ * 只儲存事件，不儲存分數。分數是即時 reduce 出來的，因此：
+ *   還原 = 移除最後一鋪
+ *   改名 = 修改 Player.name，對歷史零影響
+ *   換位 = 之後的 seats 換次序，舊牌各自保留自己那份快照
  */
 
 
-/** 每個座位嘅累計。 */
+/** 每個座位的累計。 */
 function seatTotals   (hands           )         {
   const out = ZERO_DELTAS();
   for (const h of hands) {
@@ -1823,10 +1839,10 @@ function seatTotals   (hands           )         {
 }
 
 /**
- * 一個人嘅累計。
+ * 一個人的累計。
  *
- * 逐鋪搵佢當時坐邊個位，加返嗰個位嘅數。
- * 佢中途轉過位、改過三次名都好，呢條式都啱——因為快照存嘅係 id。
+ * 逐鋪找出他當時坐在哪個位置，加上那個位置的數值。
+ * 即使他中途換過位、改過三次名字，這條公式依然成立——因為快照儲存的是 id。
  */
 function playerTotal   (hands           , playerId          )         {
   let total = 0;
@@ -1838,7 +1854,7 @@ function playerTotal   (hands           , playerId          )         {
   return total;
 }
 
-/** 全部人嘅累計，用嚟出「現時賽果」。 */
+/** 所有人的累計，用於顯示「目前賽果」。 */
 function standings      (
   session               ,
 )                                      {
@@ -1847,7 +1863,7 @@ function standings      (
     .sort((a, b) => b.total - a.total);
 }
 
-/** 記低一鋪。回傳新 session，唔會改原本嗰個。 */
+/** 記錄一鋪。回傳新的 session，不會修改原本那個。 */
 function appendHand      (
   session               ,
   events                   ,
@@ -1865,8 +1881,8 @@ function appendHand      (
     round: session.round,
     events,
     deltas,
-    // 只有真係有 note 先加個 key——JSON 唔會存 undefined，
-    // 有 key 但係 undefined 就會令「存完讀返」唔完全一樣。
+    // 只有真的有 note 才加上這個 key——JSON 不會儲存 undefined，
+    // 若有 key 但值為 undefined，會令「存檔後讀回」的結果不完全一致。
     ...(note === undefined ? {} : { note }),
   };
   return { ...session, hands: [...session.hands, hand], round: nextRound };
@@ -1875,8 +1891,8 @@ function appendHand      (
 /**
  * 還原最後一鋪。
  *
- * 因為每一鋪都影印咗當時嘅局面，還原就係「拎返上一鋪嗰份」——
- * 唔使寫任何反向邏輯，所以冇得計錯。
+ * 由於每一鋪都複製了當時的局面，還原只需「取回上一鋪那份」即可——
+ * 無需撰寫任何反向邏輯，因此不會算錯。
  */
 function undoLastHand      (session               )                {
   if (session.hands.length === 0) return session;
@@ -1885,7 +1901,7 @@ function undoLastHand      (session               )                {
   return { ...session, hands, round: last.round };
 }
 
-/** 改名。歷史零影響——事件序列由頭到尾冇出現過名。 */
+/** 改名。對歷史零影響——事件序列從頭到尾都不曾出現名字。 */
 function renamePlayer      (
   session               ,
   playerId          ,
@@ -1897,7 +1913,7 @@ function renamePlayer      (
   };
 }
 
-/** 換位：兩個座位對調。只影響之後嘅牌。 */
+/** 換位：兩個座位對調。只影響之後的牌局。 */
 function swapSeats      (
   session               ,
   a      ,
@@ -1908,7 +1924,7 @@ function swapSeats      (
   return { ...session, seats };
 }
 
-/** 換人：新人坐低頂走原本嗰個。只影響之後嘅牌。 */
+/** 換人：新人入座頂替原本那位。只影響之後的牌局。 */
 function substitutePlayer      (
   session               ,
   seat      ,
@@ -1928,25 +1944,25 @@ return { seatTotals, playerTotal, standings, appendHand, undoLastHand, renamePla
 const __m_dice = (() => {
 const { WIND_NAMES } = __m_types;
 /**
- * 麻雀骰。
+ * 麻將骰子。
  *
- * 骰唔止係出個數字——喺麻雀入面佢係用嚟**數位**嘅：
- * 由擲骰嗰個人起計 1，逆時針數到骰子總和嗰個位。
- * 開局擲骰決定邊個做莊，之後每鋪莊家擲骰決定由邊度開牌。
+ * 骰子不只是產生一個數字——在麻將中它是用來**數位置**的：
+ * 從擲骰的人開始算作 1，逆時針數到骰子總和所在的位置。
+ * 開局擲骰決定由誰坐莊，之後每鋪由莊家擲骰決定從何處開牌。
  *
- * 所以呢度除咗擲骰，仲會計埋「數到邊個位」——嗰個先係玩家真正想知嘅嘢。
+ * 因此這裡除了擲骰之外，還會計算「數到哪個位置」——那才是玩家真正想知道的資訊。
  */
 
 
 /**
- * 由擲骰者起計 1，數 `count` 個位（逆時針），落喺邊個座位。
+ * 從擲骰者開始算作 1，數 `count` 個位置（逆時針），落在哪個座位。
  *
- * 擲骰者自己係 1，所以要減一先取模：
- *   總和 1 → 自己、2 → 下家、5 → 又返到自己。
+ * 擲骰者自己算作 1，所以要先減一才能取模：
+ *   總和 1 → 自己、2 → 下家、5 → 又回到自己。
  */
 function seatFromCount(roller      , count        )       {
   if (!Number.isInteger(count) || count < 1) {
-    throw new RangeError(`點數要係 1 或以上嘅整數，收到 ${count}`);
+    throw new RangeError(`點數必須為 1 或以上的整數，收到 ${count}`);
   }
   return ((roller + count - 1) % 4)        ;
 }
@@ -1954,7 +1970,7 @@ function seatFromCount(roller      , count        )       {
 /**
  * 擲骰。
  *
- * `rng` 可以注入，令測試 reproducible；平時就用 Math.random。
+ * `rng` 可以注入，讓測試結果可重現；平時則使用 Math.random。
  */
 function rollDice(
   roller      ,
@@ -1962,14 +1978,14 @@ function rollDice(
   rng               = Math.random,
 )           {
   if (!Number.isInteger(count) || count < 1 || count > 5) {
-    throw new RangeError(`骰子數目要喺 1 到 5 之間，收到 ${count}`);
+    throw new RangeError(`骰子數目必須介於 1 到 5 之間，收到 ${count}`);
   }
   const values = Array.from({ length: count }, () => 1 + Math.floor(rng() * 6));
   const total = values.reduce((a, b) => a + b, 0);
   return { values, total, roller, landsOn: seatFromCount(roller, total) };
 }
 
-/** 一句講清楚粒骰結果，例如「擲到 11 → 西家」。 */
+/** 用一句話說明骰子結果，例如「擲到 11 → 西家」。 */
 function describeRoll(roll          , dealerSeat      )         {
   const wind = WIND_NAMES[((roll.landsOn - dealerSeat + 4) % 4)                 ];
   return `${roll.values.join(' + ')} = ${roll.total} → ${wind}家`;
@@ -1983,7 +1999,7 @@ const __m_stats = (() => {
 /**
  * 統計數據。
  *
- * 全部由同一條事件序列 derive，唔會另外存——所以永遠唔會同分數唔同步。
+ * 全部都是由同一條事件序列衍生出來，不會另外儲存——因此永遠不會與分數不同步。
  */
 
                                                                
@@ -1994,9 +2010,9 @@ const __m_stats = (() => {
                         
                
                     
-                  
+                   
                 
-                              
+                                
                          
                 
                   
@@ -2006,9 +2022,9 @@ const __m_stats = (() => {
                                   
 
 /**
- * 逐個玩家嘅統計。
+ * 逐個玩家的統計。
  *
- * 留意係跟 PlayerId 數，唔係跟座位——所以中途換位、改名都唔會撈亂。
+ * 注意是依照 PlayerId 計算，不是依照座位——因此中途換位、改名都不會混亂。
  */
 function playerStats                    (
   hands           ,
@@ -2026,7 +2042,7 @@ function playerStats                    (
 
     for (const hand of hands) {
       const seat = hand.seats.indexOf(id)             ;
-      if (seat === -1) continue; // 嗰陣未落場
+      if (seat === -1) continue; // 當時尚未入場
       played++;
       total += hand.deltas[seat] ;
       biggest = Math.max(biggest, hand.deltas[seat] );
@@ -2060,9 +2076,9 @@ function playerStats                    (
 }
 
 /**
- * 對戰矩陣：邊個最鍾意出銃俾邊個。
+ * 對戰矩陣：誰最常出銃給誰。
  *
- * matrix[出銃者][食糊者] = 次數。四個人食飯講得耐嘅數字。
+ * matrix[出銃者][食糊者] = 次數。是四人聚餐時經常拿來聊的數字。
  */
 function dealMatrix   (
   hands           ,
@@ -2083,7 +2099,7 @@ function dealMatrix   (
   return matrix;
 }
 
-/** 成場嘅概況。 */
+/** 整場的概況。 */
 function sessionStats   (hands           )   
                 
                 
@@ -2105,10 +2121,10 @@ function sessionStats   (hands           )
 }
 
 /**
- * 逐鋪嘅累計。第 i 個係打完第 i 鋪之後嘅四座位總數。
+ * 逐鋪的累計。第 i 個是打完第 i 鋪之後的四座位總數。
  *
- * 俾「詳細紀錄」個「分數」view 用——每行想同時見到嗰鋪贏輸幾多同埋
- * 打到嗰陣嘅總數，唔使自己逐行加返轉頭。
+ * 供「詳細紀錄」的「分數」view 使用——每一行都希望同時看到該鋪的輸贏
+ * 以及打到當下的總數，而不必自行逐行加總。
  */
 function runningTotals   (hands           )           {
   const out           = [];
@@ -2121,13 +2137,13 @@ function runningTotals   (hands           )           {
 }
 
 /**
- * 逐鋪嘅累計，但跟**人**唔跟**座位**。
+ * 逐鋪的累計，但是依照**人**而非依照**座位**。
  *
- * 分別喺邊度：座位每圈都轉、換位換人隨時發生，`runningTotals()` 果啲
- * 數字跟住座位走，唔啱用嚟畫「邊個個人走勢」。呢個先啱——四條線
- * 永遠代表同一個人，唔會因為佢轉咗風位就跳去第條線。
+ * 差異在於：座位每圈都會輪轉、換位換人隨時可能發生，而 `runningTotals()`
+ * 的數字是跟著座位走的，並不適合用來畫「個人走勢」。這個函式才對——四條線
+ * 永遠代表同一個人，不會因為他換了風位就跳到另一條線上。
  *
- * 未落場（換人入嚟之前）嗰幾鋪，個人嘅數保持喺入場前一刻嘅總數。
+ * 尚未入場（換人加入之前）的那幾鋪，個人的數值維持在入場前一刻的總數。
  */
 function playerRunningTotals   (
   hands           ,
@@ -2145,7 +2161,7 @@ function playerRunningTotals   (
   return out;
 }
 
-/** 呢鋪牌入面，指定嘅人打咗嗰個位，收咗／輸咗幾多。冇落場就 null。 */
+/** 在這鋪牌中，指定的人所打的那個位置，贏了／輸了多少。沒有入場則為 null。 */
 function playerDeltaInHand   (hand         , playerId          )                {
   const seat = hand.seats.indexOf(playerId);
   return seat === -1 ? null : hand.deltas[seat        ] ;
@@ -2157,13 +2173,13 @@ return { playerStats, dealMatrix, sessionStats, runningTotals, playerRunningTota
 const __m_storage = (() => {
 
 /**
- * 儲存同匯出。
+ * 儲存與匯出。
  *
- * 存嘅係成條事件序列，唔係分數——分數幾時都可以由事件重新計返出嚟。
- * 一百鋪牌大約 10KB，所以 localStorage 綽綽有餘。
+ * 儲存的是整條事件序列，而不是分數——分數隨時都可以由事件重新計算出來。
+ * 一百鋪牌大約 10KB，因此 localStorage 綽綽有餘。
  *
- * 呢度只做「物件 ↔ 字串」，唔掂 localStorage 本身，
- * 咁 Node 度就測試得到，瀏覽器嗰邊包多一層就得。
+ * 這裡只處理「物件 ↔ 字串」的轉換，不涉及 localStorage 本身，
+ * 這樣在 Node 環境就能測試，瀏覽器那邊再包一層即可。
  */
 
 const SCHEMA = 1;
@@ -2180,10 +2196,10 @@ function serialize   (session   )         {
 }
 
 /**
- * 讀返出嚟。
+ * 讀取回來。
  *
- * 讀唔到（第一次用、資料壞咗、schema 太新）就回 null，
- * 由叫嘅人決定點做——**唔會擲錯**，因為開唔到 app 係最差嘅結果。
+ * 讀取不到（首次使用、資料損毀、schema 版本太新）就回傳 null，
+ * 交由呼叫方決定如何處理——**不會拋出例外**，因為打不開 app 是最差的結果。
  */
 function deserialize   (raw               )           {
   if (!raw) return null;
@@ -2202,7 +2218,7 @@ function deserialize   (raw               )           {
   return env.session;
 }
 
-/** 匯出成 CSV，方便攞去 Excel 對數。 */
+/** 匯出成 CSV，方便拿到 Excel 對帳。 */
 function toCSV(
   hands   
                 
@@ -2235,11 +2251,11 @@ const riichi = __m_riichi;
 /**
  * 玩法登記處。
  *
- * 呢個係框架文件講嗰個 Variant 介面嘅實際落地。目的只有一個：
- * **令介面唔使識任何一種麻雀**。
+ * 這是框架文件所講的 Variant 介面之實際落地。目的只有一個：
+ * **讓介面不需要認識任何一種麻將**。
  *
- * 介面淨係識三件事——問邊個玩法攞預設、攞一行摘要、攞個輸入格有咩揀。
- * 加第六種玩法 = 喺呢度加一項，介面一行都唔使改。
+ * 介面只需要知道三件事——問哪個玩法取預設、取一行摘要、取輸入格有什麼選項。
+ * 新增第六種玩法 = 在這裡加一項，介面一行都不需要改。
  */
 
                                                                       
@@ -2249,13 +2265,13 @@ const riichi = __m_riichi;
 
 
 
-/** 輸入格上面一粒掣。 */
+/** 輸入格上方的一個按鈕。 */
                            
-                         
+                             
                 
-                     
+                       
                
-                    
+                     
                  
   
 
@@ -2265,26 +2281,57 @@ const riichi = __m_riichi;
                     
   
 
+/**
+ * 規則編輯器中一個可調整的欄位。只描述形狀，不描述畫面如何呈現——
+ * 讓 `web/ui.js` 不需要認識任何一種麻將的 config 長什麼樣，也能畫出整個編輯器。
+ *
+ * `choice`／`toggle` 直接讀寫 `config[key]`；`stake` 是香港麻將那種
+ * 「選一個番數、告知打多大，再反推基數」的特殊欄位，目前只有
+ * hk.ts／paoma.ts 使用（兩者 config 形狀相同，UI 使用 hk.ts 那組函式即可）。
+ */
+                       
+                                                                                                        
+                                                                                     
+                                                                               
+                                     
+
                            
              
                
                                
-                    
+                     
                                
-                                             
+                                                
                                      
-                 
+                    
                       
-                              
+                                
                                     
-                
+                  
                                                               
          
                              
                       
                 
                                                
+                                           
+                          
   
+
+const HK_RULE_FIELDS              = [
+  { kind: 'choice', key: 'minFaan', label: '起糊番數', values: [1, 2, 3, 4, 5], fmt: (v) => `${v}番` },
+  { kind: 'choice', key: 'maxFaan', label: '封頂番數', values: hk.MAX_FAAN_CHOICES, fmt: (v) => `${v}番` },
+  { kind: 'choice', key: 'scale', label: '級距', values: ['half', 'full'], fmt: (v) => (v === 'half' ? '半辣上' : '辣辣上') },
+  { kind: 'choice', key: 'liability', label: '找數', values: ['full', 'half'], fmt: (v) => (v === 'full' ? '全銃' : '半銃') },
+  { kind: 'stake', label: '大細　—　選一個番數，反推對應的基數' },
+];
+
+const TW_RULE_FIELDS              = [
+  { kind: 'number', key: 'base', label: '底（每次結算的固定部分）', min: 0, step: 10 },
+  { kind: 'number', key: 'tai', label: '1台多少錢', min: 1, step: 5 },
+  { kind: 'choice', key: 'maxTai', label: '台數輸入格最高到多少', values: [8, 10, 12, 16, 20, 24], fmt: (v) => `${v}台` },
+  { kind: 'toggle', key: 'autoDealerTai', label: '莊家台', onLabel: '自動計', offLabel: '自己填' },
+];
 
 const HK              = {
   id: 'hk',
@@ -2295,7 +2342,7 @@ const HK              = {
     `　·　${c.scale === 'half' ? '半辣上' : '辣辣上'}　·　${c.liability === 'full' ? '全銃' : '半銃'}`,
   headerSummary: (c             ) =>
     `${c.maxFaan}番滿糊 ${hk.unitFor(c.maxFaan, c)}　·　${c.liability === 'full' ? '全銃' : '半銃'}`,
-  scorePrompt: '幾多番？　牌型、正花、中發白、自摸嗰一番，全部自己加埋填總數。',
+  scorePrompt: '多少番？　牌型、正花、中發白、自摸的那一番，全部自行加總後填入總數。',
   describeScore: (score            ) => `${score.faan}番`,
   scoreOptions: (c             , ctx) =>
     hk.unitTable(c).map(({ faan, unit }) => ({
@@ -2305,6 +2352,7 @@ const HK              = {
       score: { faan },
     })),
   settle: hk.settle,
+  ruleFields: HK_RULE_FIELDS,
 };
 
 const TW              = {
@@ -2314,12 +2362,12 @@ const TW              = {
   summary: (c             ) =>
     `${c.base}底　·　1台 ${c.tai}　·　莊家台${c.autoDealerTai ? '自動計' : '自己填'}`,
   headerSummary: (c             ) => `${c.base}底 ${c.tai}台`,
-  scorePrompt: '幾多台？　門清、自摸、花牌、牌型全部自己加埋填總數。',
+  scorePrompt: '多少台？　門清、自摸、花牌、牌型全部自行加總後填入總數。',
   describeScore: (score            ) => `${score.tai}台`,
   scoreOptions: (c             , ctx) => {
     const opts                = [];
     for (let tai = 0; tai <= c.maxTai; tai++) {
-      // 贏家實收幾多——莊家台計唔計、邊個畀，全部喺呢度反映返
+      // 贏家實際收多少——是否計入莊家台、由誰支付，全部在這裡反映
       const others = ([0, 1, 2, 3]          ).filter((s) => s !== ctx.winner);
       const receives =
         ctx.from === 'selfDraw'
@@ -2330,6 +2378,7 @@ const TW              = {
     return opts;
   },
   settle: tw.settle,
+  ruleFields: TW_RULE_FIELDS,
 };
 
 const HKTW              = {
@@ -2339,7 +2388,7 @@ const HKTW              = {
   summary: (c                 ) =>
     `${c.base}底　·　1台 ${c.tai}　·　莊家台${c.autoDealerTai ? '自動計' : '自己填'}　·　包自摸`,
   headerSummary: (c                 ) => `${c.base}底 ${c.tai}台`,
-  scorePrompt: '幾多台？　門清、自摸、花牌、牌型全部自己加埋填總數。',
+  scorePrompt: '多少台？　門清、自摸、花牌、牌型全部自行加總後填入總數。',
   describeScore: (score                ) => `${score.tai}台`,
   scoreOptions: (c                 , ctx) => {
     const opts                = [];
@@ -2354,6 +2403,7 @@ const HKTW              = {
     return opts;
   },
   settle: hktw.settle,
+  ruleFields: TW_RULE_FIELDS,
 };
 
 const PAOMA              = {
@@ -2365,7 +2415,7 @@ const PAOMA              = {
     `　·　${c.scale === 'half' ? '半辣上' : '辣辣上'}　·　槓牌即時收錢`,
   headerSummary: (c                   ) =>
     `${c.maxFaan}番滿糊 ${hk.unitFor(c.maxFaan, c)}　·　跑馬仔`,
-  scorePrompt: '幾多番？　牌型、正花、中發白、自摸嗰一番，全部自己加埋填總數。',
+  scorePrompt: '多少番？　牌型、正花、中發白、自摸的那一番，全部自行加總後填入總數。',
   describeScore: (score                  ) => `${score.faan}番`,
   scoreOptions: (c                   , ctx) =>
     hk.unitTable(c).map(({ faan, unit }) => ({
@@ -2374,9 +2424,10 @@ const PAOMA              = {
       score: { faan },
     })),
   settle: paoma.settle,
+  ruleFields: HK_RULE_FIELDS,
 };
 
-const RIICHI_HIGH_HAN_FU = 30; // basePoints() 5 翻或以上唔理符數，呢個淨係用嚟過驗證關
+const RIICHI_HIGH_HAN_FU = 30; // basePoints() 在 5 翻以上不理會符數，此處僅用於通過驗證
 const RIICHI_FU_STEPS = [20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 110];
 
 const RIICHI              = {
@@ -2385,7 +2436,7 @@ const RIICHI              = {
   presets: riichi.RIICHI_PRESETS,
   summary: () => '標準點數表（符 × 2^(2+翻)）　·　立直棒暫未支援',
   headerSummary: () => '標準點數表',
-  scorePrompt: '幾多翻幾多符？　役、寶牌全部自己計好加埋。',
+  scorePrompt: '多少翻多少符？　役、寶牌請自行計算並加總。',
   describeScore: (score                    ) =>
     score.han >= 5 ? `${score.han}翻` : `${score.han}翻${score.fu}符`,
   scoreOptions: (_c                     , ctx) => {
@@ -2414,36 +2465,27 @@ const RIICHI              = {
     return opts;
   },
   settle: riichi.settle,
+  ruleFields: [],
 };
 
-/** 寫好晒、測試好晒嘅玩法。 */
+/** 已經寫好、測試完成的玩法。 */
 const ALL_VARIANTS                = [HK, TW, HKTW, PAOMA, RIICHI];
 
-/**
- * MVP1 淨係開香港（廣東）牌，專心整到滿意先。
- *
- * 其餘四種（台灣、港式台灣、跑馬仔、日本麻雀）引擎已經寫好同測試好，
- * 但淨係加返個 id 落嚟呢個 array 唔夠——`web/ui.js` 暫時冇玩法揀（開新局
- * 淨係用 VARIANTS[0] 嘅預設），`openRuleEditor()` 亦都寫死咗香港嗰套
- * 欄位（minFaan/maxFaan/scale/liability）。要開任何一個新玩法俾用戶用，
- * 除咗喺呢度加 id，仲要做埋：(1) 開新局嗰步加返「揀玩法」呢層，
- * (2) 規則編輯器改做認得唔同 config 形狀。呢兩樣未做，所以暫時淨係
- * 開香港，留低呢個註解等下次做嗰陣唔使由頭查一次。
- */
-const ENABLED_VARIANT_IDS = ['hk'];
+/** MVP2：五種玩法全部開放給使用者選擇（規則編輯器見 `ruleFields`，開新局那一步見 `web/ui.js` 的玩法選擇列）。 */
+const ENABLED_VARIANT_IDS = ['hk', 'tw', 'hktw', 'paoma', 'riichi'];
 
 const VARIANTS                = ALL_VARIANTS.filter((v) =>
   ENABLED_VARIANT_IDS.includes(v.id),
 );
 
 function variantById(id        )              {
-  // 用 ALL_VARIANTS——舊 session 可能係未開嘅玩法，開得返先唔會爆
+  // 使用 ALL_VARIANTS——舊 session 可能是尚未開放的玩法，這樣才能正常開啟而不會出錯
   const found = ALL_VARIANTS.find((v) => v.id === id);
-  if (!found) throw new RangeError(`唔識呢個玩法：${id}`);
+  if (!found) throw new RangeError(`無法辨識的玩法：${id}`);
   return found;
 }
 
-/** 由預設個名反查係邊個玩法。開舊 session 嗰陣用。 */
+/** 由預設名稱反查是哪個玩法。開啟舊 session 時使用。 */
 function variantOfPreset(presetName        )                     {
   return ALL_VARIANTS.find((v) => presetName in v.presets) ?? null;
 }
@@ -2464,18 +2506,18 @@ const { unitFor, unitTable, baseForAnchor, validateConfig, MAX_FAAN_CHOICES } = 
 /**
  * 介面。
  *
- * 計分引擎嘅 function（variantById / roundLabel / rollDice / playerStats …）
- * 係 build 嗰陣接喺前面，所以呢度直接叫得，唔使 import。
+ * 計分引擎的函式（variantById / roundLabel / rollDice / playerStats …）
+ * 在建置（build）時已經接到前面，因此這裡可以直接呼叫，不需要 import。
  *
- * 呢個檔案冇任何麻雀規則——所有數、所有方位、所有骰，全部問引擎攞。
- * 例外：詐糊嘅預設賠款、賠率編輯器用嘅 unitFor/baseForAnchor 呢幾樣，
- * 暫時直接叫 hk.ts 嘅 function——因為 MVP1 淨係開香港，呢層待 MVP2
- * 加台灣嗰陣要諗埋點做返 variant-agnostic（見 ENABLED_VARIANT_IDS）。
+ * 這個檔案不包含任何麻雀規則——所有數字、所有方位、所有骰子，全部向引擎取得。
+ * 例外：詐糊的預設賠款、賠率編輯器所用的 unitFor/baseForAnchor 這幾項，
+ * 目前仍直接呼叫 hk.ts 的函式——因為 MVP1 僅開放香港麻將，待 MVP2
+ * 加入台灣麻將時，需要一併考慮如何做到與玩法無關（variant-agnostic，見 ENABLED_VARIANT_IDS）。
  */
 
 const $ = (id) => document.getElementById(id);
-// 唔用「東家／南家」做預設名——方位每次落莊就轉，
-// 到時「北家」坐咗喺東位，睇落好撈。
+// 不用「東家／南家」做預設名稱——因為方位每次落莊都會改變，
+// 屆時「北家」坐在東位，看起來會很混亂。
 const DEFAULT_NAMES = ['玩家一', '玩家二', '玩家三', '玩家四'];
 const STORAGE_KEY = 'mahjong.session.v1';
 const CUSTOM = '自訂';
@@ -2484,7 +2526,7 @@ const ANIMALS = ['🦊', '🐶', '🐨', '🐼', '🐱', '🐰', '🐻', '🐯',
 let session;
 let lastRoll = null;
 let logView = 'event'; // 'event' | 'score' | 'full'
-let logAsc = false;    // false = 降序（新嘅喺頭），true = 順序
+let logAsc = false;    // false = 降序（新的在前），true = 順序
 
 /* ── session ── */
 
@@ -2509,7 +2551,7 @@ function save() {
   try {
     localStorage.setItem(STORAGE_KEY, serialize(session));
   } catch {
-    /* 私隱模式或者爆咗容量——唔好因為存唔到就搞到 app 用唔到 */
+    /* 隱私模式或容量已滿——不應該因為存不到，就導致整個 app 無法使用 */
   }
 }
 
@@ -2560,7 +2602,7 @@ function render() {
     el.innerHTML = '';
     el.setAttribute(
       'aria-label',
-      `${wind}家 ${nameOf(session.seats[seat])}${isDealer ? '（莊）' : ''}${isLeader ? '（暫時領先）' : ''}，${fmt(total)}。撳一下記低佢食糊`,
+      `${wind}家 ${nameOf(session.seats[seat])}${isDealer ? '（莊）' : ''}${isLeader ? '（暫時領先）' : ''}，${fmt(total)}。點一下記錄食糊`,
     );
 
     if (isDealer) {
@@ -2706,7 +2748,7 @@ function renderLog() {
     toolbar.hidden = true;
     const li = document.createElement('li');
     li.className = 'empty';
-    li.textContent = '未開始。撳一張牌記低邊個食糊。';
+    li.textContent = '尚未開始。點選一張座位牌，記錄哪位食糊。';
     ol.append(li);
     return;
   }
@@ -2760,19 +2802,39 @@ function renderLog() {
 
 function computeBadges(rows) {
   const badges = new Map(rows.map((r) => [r.id, '陪跑員']));
+  const roasts = new Set(); // 屬於「虧」那一派的稱號，顯示成另一種顏色
   const crowns = { wins: null, selfDraws: null, deals: null };
-  const pick = (key, label) => {
-    const max = Math.max(...rows.map((r) => r[key]));
-    if (max <= 0) return;
-    const leaders = rows.filter((r) => r[key] === max);
-    if (leaders.length !== 1) return; // 撞平就唔頒——寧願冇，唔好亂頒
-    crowns[key] = leaders[0].id;
-    if (badges.get(leaders[0].id) === '陪跑員') badges.set(leaders[0].id, label);
+
+  // values：逐個玩家對應的比較值（可以是 null，代表沒有資格參與這個稱號）。
+  // min：取最小的那個（例如包尾）；否則取最大，並要求 > 0（例如零食糊不會封食糊王）。
+  const award = (values, label, { crownKey, roast = false, min = false } = {}) => {
+    const present = rows
+      .map((r, i) => [r, values[i]])
+      .filter(([, v]) => v !== null && v !== undefined);
+    if (present.length === 0) return;
+    const target = min
+      ? Math.min(...present.map(([, v]) => v))
+      : Math.max(...present.map(([, v]) => v));
+    if (!min && target <= 0) return;
+    const leaders = present.filter(([, v]) => v === target);
+    if (leaders.length !== 1) return; // 打平就不頒發——寧缺勿濫，不要亂頒
+    const winner = leaders[0][0];
+    if (crownKey) crowns[crownKey] = winner.id;
+    if (badges.get(winner.id) === '陪跑員') {
+      badges.set(winner.id, label);
+      if (roast) roasts.add(winner.id);
+    }
   };
-  pick('wins', '食糊王');
-  pick('deals', '出銃王');
-  pick('selfDraws', '自摸王');
-  return { badges, crowns };
+
+  // 順序 = 優先序：好稱號優先頒發，差的殿後——已經有好稱號的人不會被改頒差的稱號。
+  award(rows.map((r) => r.wins), '食糊王', { crownKey: 'wins' });
+  award(rows.map((r) => r.selfDraws), '自摸王', { crownKey: 'selfDraws' });
+  award(rows.map((r) => r.avgFaan), '番王'); // 食糊的平均番數最高
+  award(rows.map((r) => r.biggest), '爆棚王'); // 單鋪贏得最多的那鋪
+  award(rows.map((r) => r.deals), '出銃王', { crownKey: 'deals', roast: true });
+  award(rows.map((r) => r.total), '包尾', { min: true, roast: true }); // 總數最低
+
+  return { badges, crowns, roasts };
 }
 
 function shareResults() {
@@ -2787,8 +2849,8 @@ function shareResults() {
     navigator.share({ text }).catch(() => {});
   } else {
     navigator.clipboard?.writeText(text).then(
-      () => toast('已經 copy 咗去剪貼簿'),
-      () => toast('copy 唔到，請自己 select'),
+      () => toast('已複製到剪貼簿'),
+      () => toast('無法複製，請自行選取文字'),
     );
   }
 }
@@ -2803,8 +2865,8 @@ function renderStats() {
   const summary = document.createElement('p');
   summary.className = 'stat-summary';
   summary.textContent = overall.hands === 0
-    ? '打多幾鋪就有數睇。'
-    : `打咗 ${overall.hands} 鋪　·　流局 ${overall.draws}　·　自摸 ${overall.selfDraws}　·　最長連莊 ${overall.longestStreak}`;
+    ? '再多打幾局，就會有統計數據可看。'
+    : `已打 ${overall.hands} 局　·　流局 ${overall.draws}　·　自摸 ${overall.selfDraws}　·　最長連莊 ${overall.longestStreak}`;
   box.append(summary);
   if (overall.hands === 0) return;
 
@@ -2816,7 +2878,7 @@ function renderStats() {
   top.append(share);
   box.append(top);
 
-  const { badges, crowns } = computeBadges(rows);
+  const { badges, crowns, roasts } = computeBadges(rows);
   const cards = document.createElement('div');
   cards.className = 'stat-cards';
 
@@ -2838,7 +2900,7 @@ function renderStats() {
     nm.textContent = nameOf(r.id);
     const bd = document.createElement('span');
     const label = badges.get(r.id);
-    bd.className = `stat-badge${label !== '陪跑員' ? ' top' : ''}`;
+    bd.className = `stat-badge${label === '陪跑員' ? '' : roasts.has(r.id) ? ' roast' : ' top'}`;
     bd.textContent = label;
     head.append(av, rk, nm, bd);
 
@@ -2872,11 +2934,11 @@ function renderStats() {
   });
   box.append(cards);
 
-  // 對戰矩陣（邊個出銃俾邊個）——同卡片係唔同層次嘅資料，keep 埋。
+  // 對戰矩陣（誰出銃給誰）——與卡片屬於不同層次的資料，一併保留。
   const m = dealMatrix(session.hands, ids);
   if (m.flat().some((n) => n > 0)) {
     const h = document.createElement('h3');
-    h.textContent = '邊個出銃俾邊個';
+    h.textContent = '誰出銃給誰';
     const mt = document.createElement('table');
     const head2 = ['出銃 ↓ ／ 食糊 →', ...ids.map(nameOf)];
     mt.innerHTML = `<thead><tr>${head2.map((t) => `<th>${t}</th>`).join('')}</tr></thead>`;
@@ -2910,12 +2972,23 @@ function setTab(next) {
 
 /* ── sheet ── */
 
+/** sheet 顯示／隱藏是透過 `.open` class 來切換動畫，`hidden` 只在動畫結束後才設置——
+ *  這樣才能讓 CSS transition 有時間執行完畢，不會馬上消失，顯得突兀。 */
+const SHEET_MOTION_MS = 200;
+
 function closeSheet() {
-  $('scrim').hidden = true;
-  $('sheet').innerHTML = '';
+  const scrim = $('scrim');
+  clearTimeout(closeSheet._t);
+  scrim.classList.remove('open');
+  closeSheet._t = setTimeout(() => {
+    scrim.hidden = true;
+    $('sheet').innerHTML = '';
+  }, SHEET_MOTION_MS);
 }
 
 function openSheet(title, sub, build) {
+  const scrim = $('scrim');
+  clearTimeout(closeSheet._t);
   const sheet = $('sheet');
   sheet.innerHTML = '';
   const h = document.createElement('h3');
@@ -2927,11 +3000,15 @@ function openSheet(title, sub, build) {
   build(sheet);
   const cancel = document.createElement('button');
   cancel.className = 'cancel';
-  cancel.textContent = '收埋';
+  cancel.textContent = '取消';
   cancel.onclick = closeSheet;
   sheet.append(cancel);
-  $('scrim').hidden = false;
+  scrim.hidden = false;
+  scrim.classList.remove('open');
   sheet.scrollTop = 0;
+  // 一定要等到下一個 frame：若從 hidden 切回 display 那刻就立即加上 .open，
+  // transition 沒有起點可以過渡，會被當成瞬間跳過去，滑入效果就會消失
+  requestAnimationFrame(() => { scrim.classList.add('open'); });
 }
 
 function optionButton(label, note, primary) {
@@ -2949,16 +3026,22 @@ function optionButton(label, note, primary) {
 function toast(msg) {
   const t = $('toast');
   t.textContent = msg;
-  t.hidden = false;
   clearTimeout(toast._t);
-  toast._t = setTimeout(() => { t.hidden = true; }, 2600);
+  clearTimeout(toast._hideT);
+  t.hidden = false;
+  t.classList.remove('show');
+  requestAnimationFrame(() => { t.classList.add('show'); });
+  toast._t = setTimeout(() => {
+    t.classList.remove('show');
+    toast._hideT = setTimeout(() => { t.hidden = true; }, 200);
+  }, 2600);
 }
 
 /**
- * 轉盤揀嘢：native picker 嘅感覺，靠 scroll-snap。
+ * 轉盤選取：模擬 native picker 的體驗，靠 scroll-snap 實現。
  *
- * 撳一個項目即刻生效（唔使等 scroll settle）；手指拖到邊個就等
- * scroll 停低（debounce）先算數，兩條路都會觸發 onChange。
+ * 點選一個項目會立即生效（不需要等待 scroll settle）；手指滑動拖曳時，
+ * 則要等 scroll 停止（debounce）才算數，兩種操作都會觸發 onChange。
  */
 function wheelPicker({ items, selected = 0, onChange }) {
   const frame = document.createElement('div');
@@ -3026,7 +3109,7 @@ function wheelPicker({ items, selected = 0, onChange }) {
   return { el: frame, get value() { return current; } };
 }
 
-/* ── 記一鋪牌：撳嗰隻牌，一個 sheet 度揀晒番數、出銃／自摸、包自摸 ── */
+/* ── 記錄一局牌：點選那張座位牌，在同一個 sheet 內選好番數、出銃／自摸、包自摸 ── */
 
 function pickScore(winner) {
   const v = variant();
@@ -3034,9 +3117,9 @@ function pickScore(winner) {
   const who = nameOf(session.seats[winner]);
   const opponents = [0, 1, 2, 3].filter((s) => s !== winner);
 
-  // 番數 wheel 嘅內容淨係起計一次（用 'selfDraw' 攞 label/score 就夠）；
-  // 個 note（金額）淨係喺 renderPreview 度先按實際 from 再算，
-  // 咁樣轉「出銃／自摸」嗰陣唔使成個番數 wheel 重新起，唔會跳。
+  // 番數 wheel 的內容只計算一次（用 'selfDraw' 取得 label/score 即可）；
+  // note（金額）只在 renderPreview 中，才依照實際的 from 重新計算，
+  // 這樣切換「出銃／自摸」時，不需要讓整個番數 wheel 重新建立，畫面也不會跳動。
   const faanOptions = v.scoreOptions(c, { winner, from: 'selfDraw', round: session.round });
   const faanItems = [
     { label: '詐糊', misdeal: true },
@@ -3058,7 +3141,7 @@ function pickScore(winner) {
   const isMisdeal = () => !!faanItems[faanIdx].misdeal;
 
   function draw() {
-    openSheet('食糊！', '幾多番、邊個出銃定自摸——揀晒佢再確定。', (sheet) => {
+    openSheet('食糊！', '多少番、由誰出銃或自摸——選好後再確定。', (sheet) => {
       if (isMisdeal()) {
         buildMisdeal(sheet);
         return;
@@ -3092,7 +3175,7 @@ function pickScore(winner) {
           paoOn = false;
           paoSeat = null;
           multiRonOn = false;
-          draw(); // from 轉咗要現形／隱藏「包自摸」，成個 sheet 重畫一次
+          draw(); // from 切換後要顯示／隱藏「包自摸」，整個 sheet 需要重新繪製
         },
       });
       fromCol.append(fromWheel.el);
@@ -3110,7 +3193,7 @@ function pickScore(winner) {
       function renderPreview() {
         const from = currentFrom();
         const opts = v.scoreOptions(c, { winner, from, round: session.round });
-        const matched = opts[faanIdx - 1]; // faanItems[0] 係詐糊，真番數由 index 1 開始
+        const matched = opts[faanIdx - 1]; // faanItems[0] 是詐糊，實際番數由 index 1 開始
         preview.innerHTML = `贏家收<b>${matched ? matched.note : '—'}</b>`;
       }
       renderPreview();
@@ -3131,7 +3214,7 @@ function pickScore(winner) {
     const text = document.createElement('div');
     text.className = 'switch-text';
     text.innerHTML =
-      '<div class="switch-label">出銃者包自摸</div><div class="switch-hint">一個人孭晒六份，其餘兩家唔使畀</div>';
+      '<div class="switch-label">出銃者包自摸</div><div class="switch-hint">由他一人承擔全部六份，其餘兩家不用支付</div>';
     const sw = document.createElement('button');
     sw.className = `switch${paoOn ? ' on' : ''}`;
     sw.setAttribute('aria-pressed', String(paoOn));
@@ -3162,7 +3245,7 @@ function pickScore(winner) {
     const text = document.createElement('div');
     text.className = 'switch-text';
     text.innerHTML =
-      '<div class="switch-label">一炷多響</div><div class="switch-hint">呢炷唔止一家食，確定之後可以加多幾家</div>';
+      '<div class="switch-label">一炷多響</div><div class="switch-hint">這炷不只一家食糊，確定後可以再加入其他幾家</div>';
     const sw = document.createElement('button');
     sw.className = `switch${multiRonOn ? ' on' : ''}`;
     sw.setAttribute('aria-pressed', String(multiRonOn));
@@ -3177,7 +3260,7 @@ function pickScore(winner) {
     const p = document.createElement('p');
     p.className = 'sub';
     p.style.marginTop = '0';
-    p.textContent = `${who} 詐糊，要賠俾其餘三家，每人幾多？`;
+    p.textContent = `${who} 詐糊，要賠給其餘三家，每人多少？`;
     sheet.append(p);
 
     const input = document.createElement('input');
@@ -3191,7 +3274,7 @@ function pickScore(winner) {
     quick.className = 'grid';
     quick.style.marginTop = '.6rem';
     [1, 2, 4].forEach((mult) => {
-      const b = optionButton(String(base * mult), mult === 1 ? '起糊嗰份' : `×${mult}`);
+      const b = optionButton(String(base * mult), mult === 1 ? '起糊份額' : `×${mult}`);
       b.classList.add('tight');
       b.onclick = () => { input.value = String(base * mult); };
       quick.append(b);
@@ -3203,7 +3286,7 @@ function pickScore(winner) {
     const ok = optionButton('確定', null, true);
     ok.onclick = () => {
       const amt = Math.round(Number(input.value));
-      if (!Number.isFinite(amt) || amt <= 0) { toast('金額唔啱'); return; }
+      if (!Number.isFinite(amt) || amt <= 0) { toast('金額有誤'); return; }
       record([{ kind: 'penalty', by: winner, perPlayer: amt }], `${who} 詐糊，賠 ${amt}`);
     };
     row.append(ok);
@@ -3229,7 +3312,7 @@ function pickScore(winner) {
   function pickExtraRonWinner(from, events, labels, takenWinners) {
     const remaining = [0, 1, 2, 3].filter((s) => s !== from && !takenWinners.includes(s));
     if (remaining.length === 0) { record(events, labels.join('，')); return; }
-    openSheet('一炷多響', `${nameOf(session.seats[from])} 呢炷，仲有邊家一齊食？`, (sheet) => {
+    openSheet('一炷多響', `${nameOf(session.seats[from])} 這炷，還有哪家一起食？`, (sheet) => {
       const grid = document.createElement('div');
       grid.className = 'grid two';
       remaining.forEach((seat) => {
@@ -3240,7 +3323,7 @@ function pickScore(winner) {
       sheet.append(grid);
       const row = document.createElement('div');
       row.className = 'row';
-      const done = optionButton('夠喇，落數', null, true);
+      const done = optionButton('夠了，記錄', null, true);
       done.onclick = () => record(events, labels.join('，'));
       row.append(done);
       sheet.append(row);
@@ -3251,7 +3334,7 @@ function pickScore(winner) {
     const opts = v.scoreOptions(c, { winner: seat, from, round: session.round });
     let idx = opts.length > 1 ? 1 : 0;
     function drawExtra() {
-      openSheet(`${nameOf(session.seats[seat])} 都食糊！`, '呢家幾多番？', (sheet) => {
+      openSheet(`${nameOf(session.seats[seat])} 都食糊！`, '這家多少番？', (sheet) => {
         const wheel = wheelPicker({
           items: opts.map((o) => ({ label: o.label, score: o.score })),
           selected: idx,
@@ -3286,7 +3369,7 @@ function pickScore(winner) {
 
 function pickName(seat) {
   const pid = session.seats[seat];
-  openSheet('改名', `${nameOf(pid)} → ？　改完之前記低嘅牌唔會變。`, (sheet) => {
+  openSheet('改名', `${nameOf(pid)} → ？　改名後，先前記錄的牌局不會改變。`, (sheet) => {
     const input = document.createElement('input');
     input.type = 'text';
     input.value = nameOf(pid);
@@ -3301,7 +3384,7 @@ function pickName(seat) {
       session = renamePlayer(session, pid, name);
       closeSheet();
       render();
-      toast(`改咗名做「${name}」，歷史數字冇變`);
+      toast(`已改名為「${name}」，歷史數字不變`);
     };
     ok.onclick = go;
     input.onkeydown = (e) => { if (e.key === 'Enter') go(); };
@@ -3312,7 +3395,7 @@ function pickName(seat) {
 }
 
 function pickRenameChoice() {
-  openSheet('改名', '揀邊個要改名。', (sheet) => {
+  openSheet('改名', '請選擇要改名的玩家。', (sheet) => {
     const grid = document.createElement('div');
     grid.className = 'grid two';
     for (let s = 0; s < 4; s++) {
@@ -3337,74 +3420,114 @@ function throwDice() {
 /* ── 設定 ── */
 
 function openSettings() {
-  openSheet('設定', '呢啲改動唔會影響已經記低嘅牌。', (sheet) => {
+  openSheet('設定', '這些變更不會影響已記錄的牌局。', (sheet) => {
     const grid = document.createElement('div');
     grid.className = 'grid two';
 
-    const rules = optionButton('玩法同賠率', session.presetName);
+    const rules = optionButton('玩法與賠率', session.presetName);
     rules.onclick = () => openRuleEditor();
 
-    const rename = optionButton('改名', '幫任何一位改名');
+    const rename = optionButton('改名', '可為任何一位玩家改名');
     rename.onclick = () => pickRenameChoice();
 
-    const dice = optionButton(`骰子 ${session.diceCount} 粒`, '撳一下轉 2／3 粒');
+    const dice = optionButton(`骰子 ${session.diceCount} 粒`, '點一下切換 2／3 粒');
     dice.onclick = () => {
       session = { ...session, diceCount: session.diceCount === 3 ? 2 : 3 };
       lastRoll = null;
       closeSheet();
       render();
-      toast(`轉咗做 ${session.diceCount} 粒骰`);
+      toast(`已切換為 ${session.diceCount} 粒骰`);
     };
 
     const seats = optionButton('換位', '兩個位對調');
     seats.onclick = () => pickSwap();
 
-    const sub = optionButton('換人', '有人走，新人頂上');
+    const sub = optionButton('換人', '有人離開時，由新人頂替');
     sub.onclick = () => pickSubstitute();
 
-    const dealer = optionButton('莊家設定', '人手改圈同局');
+    const dealer = optionButton('莊家設定', '手動修改圈與局');
     dealer.onclick = () => pickRound();
 
-    const draw = optionButton(
-      session.config.dealerContinuesOnDraw ? '流局：連莊' : '流局：落莊',
-      '撳一下轉',
-    );
-    draw.onclick = () => {
-      session = {
-        ...session,
-        config: { ...session.config, dealerContinuesOnDraw: !session.config.dealerContinuesOnDraw },
-      };
-      closeSheet();
-      render();
-      toast(`流局改咗做${session.config.dealerContinuesOnDraw ? '連莊' : '落莊'}`);
-    };
+    const buttons = [rules, rename, dice, seats, sub, dealer];
 
-    const exp = optionButton('匯出 CSV', '攞去 Excel 對數');
+    // 流局連莊／落莊：日本麻將沒有這個選項——它的連莊取決於聽牌，不是一個開關（見 riichi.ts）
+    if ('dealerContinuesOnDraw' in session.config) {
+      const draw = optionButton(
+        session.config.dealerContinuesOnDraw ? '流局：連莊' : '流局：落莊',
+        '點一下切換',
+      );
+      draw.onclick = () => {
+        session = {
+          ...session,
+          config: { ...session.config, dealerContinuesOnDraw: !session.config.dealerContinuesOnDraw },
+        };
+        closeSheet();
+        render();
+        toast(`流局已改為${session.config.dealerContinuesOnDraw ? '連莊' : '落莊'}`);
+      };
+      buttons.push(draw);
+    }
+
+    const exp = optionButton('匯出 CSV', '可在 Excel 核對數目');
     exp.onclick = () => exportCSV();
+    buttons.push(exp);
 
     const fresh = optionButton('新牌局', '分數清零');
     fresh.onclick = () => confirmReset();
+    buttons.push(fresh);
 
-    grid.append(rules, rename, dice, seats, sub, dealer, draw, exp, fresh);
+    grid.append(...buttons);
     sheet.append(grid);
   });
 }
 
 /**
- * 玩法同賠率編輯器。
+ * 玩法與賠率編輯器。
  *
- * 重點喺「大細」嗰行：唔係叫人填基數（冇人心目中係諗基數），
- * 而係揀一個番數講「呢個番數打幾大」，其餘成張表按級距自動跳。
- * 跳完即刻 render 返成張表——除唔盡會有出入，一定要俾人見到。
+ * Variant-agnostic：逐項調整的部分不預設任何一種麻雀的欄位，全部由
+ * `variant().ruleFields` 告訴它要畫什麼（見 src/variant.ts 的 RuleField）。
+ * 只有「大細」這個 stake 欄位仍需特殊處理——並非讓人直接填寫基數（沒有人
+ * 心裡是以基數在思考的），而是選一個番數，說明「這個番數打多大」，
+ * 整張表會按級距自動換算。這種選法目前只用於香港／跑馬仔（兩者 config 形狀一樣）。
  */
 function openRuleEditor() {
-  let draft = { ...session.config };
+  let variantId = session.variantId;
   let presetName = session.presetName;
-  let anchorFaan = Math.min(draft.maxFaan, Math.max(draft.minFaan, draft.maxFaan));
+  let draft = { ...session.config };
+  let anchorFaan = draft.maxFaan;
+
+  function pickVariant(id) {
+    variantId = id;
+    const [name, cfg] = Object.entries(variantById(id).presets)[0];
+    presetName = name;
+    draft = { ...cfg };
+    anchorFaan = draft.maxFaan;
+    build();
+  }
 
   function build() {
-    openSheet('玩法同賠率', '揀個現成玩法，或者自己調。改咗即刻見到成張賠率表。', (sheet) => {
+    const v = variantById(variantId);
+
+    openSheet('玩法與賠率', '選擇麻雀種類、選一個現成玩法，或自行調整。改動後可立即看到整張賠率表。', (sheet) => {
       const markCustom = () => { presetName = CUSTOM; };
+
+      // ── 揀玩法 ──
+      if (VARIANTS.length > 1) {
+        const variantField = document.createElement('div');
+        variantField.className = 'field';
+        variantField.innerHTML = '<label>玩法</label>';
+        const variantGrid = document.createElement('div');
+        variantGrid.className = 'grid two';
+        for (const vv of VARIANTS) {
+          const b = optionButton(vv.name, null);
+          b.classList.add('tight');
+          if (vv.id === variantId) b.classList.add('on');
+          b.onclick = () => pickVariant(vv.id);
+          variantGrid.append(b);
+        }
+        variantField.append(variantGrid);
+        sheet.append(variantField);
+      }
 
       // ── 現成玩法 ──
       const presetField = document.createElement('div');
@@ -3412,7 +3535,7 @@ function openRuleEditor() {
       presetField.innerHTML = '<label>現成玩法</label>';
       const presetGrid = document.createElement('div');
       presetGrid.className = 'grid two';
-      for (const [name, cfg] of Object.entries(variant().presets)) {
+      for (const [name, cfg] of Object.entries(v.presets)) {
         const b = optionButton(name, null);
         b.classList.add('tight');
         if (presetName === name) b.classList.add('on');
@@ -3434,98 +3557,119 @@ function openRuleEditor() {
         wrap.innerHTML = `<label>${label}</label>`;
         const g = document.createElement('div');
         g.className = 'grid';
-        for (const v of values) {
-          const b = optionButton(fmtLabel(v), null);
+        for (const val of values) {
+          const b = optionButton(fmtLabel(val), null);
           b.classList.add('tight');
-          if (v === current) b.classList.add('on');
-          b.onclick = () => { onPick(v); markCustom(); build(); };
+          if (val === current) b.classList.add('on');
+          b.onclick = () => { onPick(val); markCustom(); build(); };
           g.append(b);
         }
         wrap.append(g);
         sheet.append(wrap);
       };
 
-      chooser('起糊番數', [1, 2, 3, 4, 5], draft.minFaan, (v) => {
-        draft.minFaan = v;
-        if (draft.maxFaan < v) draft.maxFaan = v;
-        if (anchorFaan < v || anchorFaan > draft.maxFaan) anchorFaan = draft.maxFaan;
-      }, (v) => `${v}番`);
-
-      chooser('封頂番數', MAX_FAAN_CHOICES, draft.maxFaan, (v) => {
-        draft.maxFaan = v;
-        if (anchorFaan > v) anchorFaan = v;
-      }, (v) => `${v}番`);
-
-      chooser('級距', ['half', 'full'], draft.scale,
-        (v) => { draft.scale = v; },
-        (v) => (v === 'half' ? '半辣上' : '辣辣上'));
-
-      chooser('找數', ['full', 'half'], draft.liability,
-        (v) => { draft.liability = v; },
-        (v) => (v === 'full' ? '全銃' : '半銃'));
-
-      // ── 大細 ──
-      const problem = validateConfig(draft);
-      const stake = document.createElement('div');
-      stake.className = 'field';
-      stake.innerHTML = '<label>大細　—　揀一個番數，話我知佢個基數幾多</label>';
-
-      if (!problem) {
-        const anchorRow = document.createElement('div');
-        anchorRow.className = 'anchor';
-
-        const sel = document.createElement('select');
-        sel.setAttribute('aria-label', '用邊個番數做基準');
-        for (let f = draft.minFaan; f <= draft.maxFaan; f++) {
-          const o = document.createElement('option');
-          o.value = String(f);
-          o.textContent = `${f}番`;
-          if (f === anchorFaan) o.selected = true;
-          sel.append(o);
-        }
-        const amountInput = document.createElement('input');
-        amountInput.type = 'number';
-        amountInput.min = '1';
-        amountInput.inputMode = 'numeric';
-        amountInput.setAttribute('aria-label', '打幾大');
-        amountInput.value = String(unitFor(anchorFaan, draft));
-
-        const apply = () => {
-          const amount = Number(amountInput.value);
-          if (!Number.isFinite(amount) || amount <= 0) return;
-          try {
-            draft.base = baseForAnchor(anchorFaan, amount, draft);
-            markCustom();
-            build();
-          } catch { /* 輸入未完整，唔好嘈 */ }
+      const numberField = (label, current, onCommit) => {
+        const wrap = document.createElement('div');
+        wrap.className = 'field';
+        wrap.innerHTML = `<label>${label}</label>`;
+        const input = document.createElement('input');
+        input.type = 'number';
+        input.inputMode = 'numeric';
+        input.setAttribute('aria-label', label);
+        input.value = String(current);
+        const commit = () => {
+          const n = Number(input.value);
+          if (!Number.isFinite(n)) return;
+          onCommit(n);
+          markCustom();
+          build();
         };
-        sel.onchange = () => { anchorFaan = Number(sel.value); build(); };
-        amountInput.onchange = apply;
-        amountInput.onkeydown = (e) => { if (e.key === 'Enter') apply(); };
+        input.onchange = commit;
+        input.onkeydown = (e) => { if (e.key === 'Enter') commit(); };
+        wrap.append(input);
+        sheet.append(wrap);
+      };
 
-        anchorRow.append(sel, amountInput);
-        stake.append(anchorRow);
-
-        const quick = document.createElement('div');
-        quick.className = 'row';
-        const half = optionButton('細一半', null);
-        const dbl = optionButton('大一倍', null);
-        half.classList.add('tight');
-        dbl.classList.add('tight');
-        half.onclick = () => { draft.base = Math.max(1, Math.round(draft.base / 2)); markCustom(); build(); };
-        dbl.onclick = () => { draft.base *= 2; markCustom(); build(); };
-        quick.append(half, dbl);
-        stake.append(quick);
+      let stakeLabel = null;
+      for (const f of v.ruleFields) {
+        if (f.kind === 'choice') {
+          chooser(f.label, f.values, draft[f.key], (val) => { draft[f.key] = val; }, f.fmt ?? String);
+        } else if (f.kind === 'toggle') {
+          chooser(f.label, [true, false], draft[f.key],
+            (val) => { draft[f.key] = val; },
+            (val) => (val ? f.onLabel : f.offLabel));
+        } else if (f.kind === 'number') {
+          numberField(f.label, draft[f.key], (val) => { draft[f.key] = val; });
+        } else if (f.kind === 'stake') {
+          stakeLabel = f.label;
+        }
       }
-      sheet.append(stake);
 
-      // ── 賠率表 ──
+      // ── 大細（目前只有香港／跑馬仔才有這個欄位） ──
+      const problem = stakeLabel ? validateConfig(draft) : null;
+      if (stakeLabel) {
+        const stake = document.createElement('div');
+        stake.className = 'field';
+        stake.innerHTML = `<label>${stakeLabel}</label>`;
+
+        if (!problem) {
+          anchorFaan = Math.min(draft.maxFaan, Math.max(draft.minFaan, anchorFaan ?? draft.maxFaan));
+          const anchorRow = document.createElement('div');
+          anchorRow.className = 'anchor';
+
+          const sel = document.createElement('select');
+          sel.setAttribute('aria-label', '以哪個番數作為基準');
+          for (let f = draft.minFaan; f <= draft.maxFaan; f++) {
+            const o = document.createElement('option');
+            o.value = String(f);
+            o.textContent = `${f}番`;
+            if (f === anchorFaan) o.selected = true;
+            sel.append(o);
+          }
+          const amountInput = document.createElement('input');
+          amountInput.type = 'number';
+          amountInput.min = '1';
+          amountInput.inputMode = 'numeric';
+          amountInput.setAttribute('aria-label', '打多大');
+          amountInput.value = String(unitFor(anchorFaan, draft));
+
+          const apply = () => {
+            const amount = Number(amountInput.value);
+            if (!Number.isFinite(amount) || amount <= 0) return;
+            try {
+              draft.base = baseForAnchor(anchorFaan, amount, draft);
+              markCustom();
+              build();
+            } catch { /* 輸入尚未完整，不要顯示錯誤 */ }
+          };
+          sel.onchange = () => { anchorFaan = Number(sel.value); build(); };
+          amountInput.onchange = apply;
+          amountInput.onkeydown = (e) => { if (e.key === 'Enter') apply(); };
+
+          anchorRow.append(sel, amountInput);
+          stake.append(anchorRow);
+
+          const quick = document.createElement('div');
+          quick.className = 'row';
+          const half = optionButton('減半', null);
+          const dbl = optionButton('加倍', null);
+          half.classList.add('tight');
+          dbl.classList.add('tight');
+          half.onclick = () => { draft.base = Math.max(1, Math.round(draft.base / 2)); markCustom(); build(); };
+          dbl.onclick = () => { draft.base *= 2; markCustom(); build(); };
+          quick.append(half, dbl);
+          stake.append(quick);
+        }
+        sheet.append(stake);
+      }
+
+      // ── 賠率表（目前只有具備 stake 欄位的玩法才有） ──
       if (problem) {
         const w = document.createElement('p');
         w.className = 'warn-line';
         w.textContent = problem;
         sheet.append(w);
-      } else {
+      } else if (stakeLabel) {
         const wrap = document.createElement('div');
         wrap.className = 'rate-wrap';
         const head = document.createElement('div');
@@ -3552,18 +3696,23 @@ function openRuleEditor() {
         const note = document.createElement('p');
         note.className = 'note-line';
         note.textContent = draft.liability === 'full'
-          ? '全銃：出銃者一人畀晒。自摸三家各畀一份。'
-          : '半銃：出銃者畀雙份，其餘兩家各一份。自摸三家各畀一份。';
+          ? '全銃：出銃者一人支付全部。自摸三家各付一份。'
+          : '半銃：出銃者支付雙份，其餘兩家各付一份。自摸三家各付一份。';
         sheet.append(note);
+      } else {
+        const summary = document.createElement('p');
+        summary.className = 'note-line';
+        summary.textContent = v.summary(draft);
+        sheet.append(summary);
       }
 
-      // ── 用呢個 ──
+      // ── 使用這個 ──
       const row = document.createElement('div');
       row.className = 'row';
       const started = session.hands.length > 0;
       const ok = optionButton(
-        started ? '用呢個開新牌局' : '就用呢個',
-        started ? '而家啲分會清零' : null,
+        started ? '用這個開新牌局' : '就用這個',
+        started ? '現在的分數將會清零' : null,
         true,
       );
       if (problem) { ok.disabled = true; ok.style.opacity = '.45'; }
@@ -3578,7 +3727,7 @@ function openRuleEditor() {
         lastRoll = null;
         closeSheet();
         render();
-        toast(`開咗新牌局：${presetName}`);
+        toast(`已開新牌局：${presetName}`);
       };
       row.append(ok);
       sheet.append(row);
@@ -3589,7 +3738,7 @@ function openRuleEditor() {
 }
 
 function pickSwap() {
-  openSheet('換位', '揀兩個位對調。之前記低嘅牌會保留原本嘅座位。', (sheet) => {
+  openSheet('換位', '選擇兩個座位對調。先前記錄的牌局將保留原本的座位。', (sheet) => {
     const chosen = [];
     const grid = document.createElement('div');
     grid.className = 'grid two';
@@ -3605,7 +3754,7 @@ function pickSwap() {
           lastRoll = null;
           closeSheet();
           render();
-          toast('換咗位');
+          toast('已換位');
         }
       };
       grid.append(b);
@@ -3615,7 +3764,7 @@ function pickSwap() {
 }
 
 function pickSubstitute() {
-  openSheet('換人', '邊個走？之前佢打嗰幾鋪嘅數會凍結，唔會跟住新人走。', (sheet) => {
+  openSheet('換人', '哪位要離開？先前他所打的那幾局分數將會凍結，不會跟著新人變動。', (sheet) => {
     const grid = document.createElement('div');
     grid.className = 'grid two';
     for (let s = 0; s < 4; s++) {
@@ -3630,25 +3779,25 @@ function pickSubstitute() {
 
 function pickSubstituteName(seat) {
   const outgoing = nameOf(session.seats[seat]);
-  openSheet('換人', `${outgoing} 走咗，邊個頂上？`, (sheet) => {
+  openSheet('換人', `${outgoing} 已離開，由誰頂替？`, (sheet) => {
     const input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = '新玩家個名';
+    input.placeholder = '新玩家的名字';
     input.maxLength = 12;
     sheet.append(input);
     const row = document.createElement('div');
     row.className = 'row';
-    const ok = optionButton('頂上', null, true);
+    const ok = optionButton('頂替', null, true);
     const go = () => {
       const name = input.value.trim();
       if (!name) return;
-      // 新 id，唔會同走咗嗰個撈亂——所以兩個人嘅統計分得開
+      // 新 id，不會與離開的那位混淆——因此兩人的統計可以分開計算
       const id = `p${Date.now().toString(36)}`;
       session = substitutePlayer(session, seat, { id, name });
       lastRoll = null;
       closeSheet();
       render();
-      toast(`${name} 頂咗 ${outgoing}，${outgoing} 之前嘅數凍結咗`);
+      toast(`${name} 已頂替 ${outgoing}，${outgoing} 之前的分數已凍結`);
     };
     ok.onclick = go;
     input.onkeydown = (e) => { if (e.key === 'Enter') go(); };
@@ -3659,7 +3808,7 @@ function pickSubstituteName(seat) {
 }
 
 function pickRound() {
-  openSheet('莊家設定', '記漏咗或者搞錯咗？直接跳去啱嘅圈同局。', (sheet) => {
+  openSheet('莊家設定', '記漏了或記錯了？可以直接跳到正確的圈與局。', (sheet) => {
     const grid = document.createElement('div');
     grid.className = 'grid four';
     for (let pw = 0; pw < 4; pw++) {
@@ -3671,7 +3820,7 @@ function pickRound() {
           lastRoll = null;
           closeSheet();
           render();
-          toast(`跳咗去 ${roundLabel(session.round)}`);
+          toast(`已跳到 ${roundLabel(session.round)}`);
         };
         grid.append(b);
       }
@@ -3681,7 +3830,7 @@ function pickRound() {
 }
 
 function confirmReset() {
-  openSheet('新牌局', '而家嘅分數同紀錄會冇晒。玩法、名同座位會保留。', (sheet) => {
+  openSheet('新牌局', '現在的分數與紀錄將全部清除。玩法、姓名與座位將會保留。', (sheet) => {
     const row = document.createElement('div');
     row.className = 'row';
     const ok = optionButton('開新牌局', null, true);
@@ -3696,7 +3845,7 @@ function confirmReset() {
       lastRoll = null;
       closeSheet();
       render();
-      toast('開咗新牌局');
+      toast('已開新牌局');
     };
     row.append(ok);
     sheet.append(row);
@@ -3707,16 +3856,16 @@ function exportCSV() {
   const csv = toCSV(session.hands, nameOf);
   closeSheet();
   if (!csv.includes('\n')) {
-    toast('未有牌可以匯出');
+    toast('沒有牌局可以匯出');
     return;
   }
   navigator.clipboard?.writeText(csv).then(
-    () => toast('已經 copy 咗去剪貼簿'),
-    () => toast('copy 唔到，請自己 select 個紀錄'),
+    () => toast('已複製到剪貼簿'),
+    () => toast('無法複製，請自行選取紀錄'),
   );
 }
 
-/* ── 落數 ── */
+/* ── 記分 ── */
 
 function record(events, label) {
   try {
@@ -3726,11 +3875,11 @@ function record(events, label) {
     render();
     toast(label);
   } catch (err) {
-    toast(`記唔到：${err.message}`);
+    toast(`無法記錄：${err.message}`);
   }
 }
 
-/* ── 綁 ── */
+/* ── 事件綁定 ── */
 
 for (let seat = 0; seat < 4; seat++) {
   $(`seat${seat}`).onclick = () => pickScore(seat);
@@ -3747,7 +3896,7 @@ $('undo').onclick = () => {
   session = undoLastHand(session);
   lastRoll = null;
   render();
-  toast(`還原咗：${label}`);
+  toast(`已還原：${label}`);
 };
 
 $('scrim').onclick = (e) => { if (e.target === $('scrim')) closeSheet(); };
@@ -3758,8 +3907,8 @@ for (const b of document.querySelectorAll('.tab')) {
 }
 
 /* ── 加到主畫面 ──
-   Android/Chrome 會自己彈 install prompt；iOS 冇，要人手教。
-   兩邊都係喺 http(s) 先有意思——直接開個檔案唔使裝。 */
+   Android/Chrome 會自動跳出 install prompt；iOS 沒有，需要手動教學。
+   兩者都只有在 http(s) 環境下才有意義——直接開啟檔案則不需要安裝。 */
 function setupInstallHint() {
   const bar = $('a2hs');
   if (!bar) return;
@@ -3767,10 +3916,10 @@ function setupInstallHint() {
   const standalone = window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
   let dismissed = false;
-  try { dismissed = localStorage.getItem(DISMISSED) === '1'; } catch { /* 私隱模式 */ }
+  try { dismissed = localStorage.getItem(DISMISSED) === '1'; } catch { /* 隱私模式 */ }
   if (standalone || dismissed || !location.protocol.startsWith('http')) return;
 
-  // navigator.standalone 淨係 Safari 有——用嚟分開「真 iPad」同「有觸控嘅 Mac」
+  // navigator.standalone 只有 Safari 才有——用來區分「真正的 iPad」與「具備觸控功能的 Mac」
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
     || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && 'standalone' in navigator);
   let deferred = null;
@@ -3780,10 +3929,10 @@ function setupInstallHint() {
     const text = document.createElement('span');
     text.innerHTML = html;
     const close = document.createElement('button');
-    close.textContent = '唔使';
+    close.textContent = '不用了';
     close.onclick = () => {
       bar.hidden = true;
-      try { localStorage.setItem(DISMISSED, '1'); } catch { /* 算 */ }
+      try { localStorage.setItem(DISMISSED, '1'); } catch { /* 忽略 */ }
     };
     bar.append(text, close);
     bar.hidden = false;
@@ -3792,7 +3941,7 @@ function setupInstallHint() {
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferred = e;
-    show('<b>加到主畫面</b>　用起上嚟同 app 一樣，離線都得。');
+    show('<b>加到主畫面</b>　使用起來與 app 一樣，離線也可以使用。');
     const add = document.createElement('button');
     add.textContent = '加';
     add.onclick = async () => {
@@ -3805,18 +3954,18 @@ function setupInstallHint() {
   });
 
   if (isIOS) {
-    show('<b>加到主畫面</b>　撳底下個「分享」掣 → 加至主畫面，之後開起上嚟就冇咗個網址列。');
+    show('<b>加到主畫面</b>　點下方的「分享」按鈕 → 加至主畫面，之後開啟時就不會顯示網址列。');
   }
 }
 setupInstallHint();
 
-/* 放上網之後可以離線用。file:// 開嗰陣冇 service worker，
-   但嗰陣個檔案本身已經喺部機度，一樣離線行到。 */
+/* 部署到網路上之後即可離線使用。以 file:// 開啟時沒有 service worker，
+   但此時檔案本身已經在裝置上，同樣可以離線執行。 */
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
 }
 
-/* 打牌時個 mon 熄咗要重新撳，好煩 */
+/* 打牌時螢幕熄滅後要重新點亮，非常不便 */
 if ('wakeLock' in navigator) {
   const keepAwake = () => navigator.wakeLock.request('screen').catch(() => {});
   keepAwake();
@@ -3825,11 +3974,11 @@ if ('wakeLock' in navigator) {
   });
 }
 
-/* ── 開波 ── */
+/* ── 啟動 ── */
 session = load() ?? newSession(firstPreset());
 setTab('log');
 render();
-if (session.hands.length > 0) toast(`接返上次：打咗 ${session.hands.length} 鋪`);
+if (session.hands.length > 0) toast(`接續上次：已打 ${session.hands.length} 局`);
 
 </script>
 </body>
