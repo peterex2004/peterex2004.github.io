@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Threshold Zone Bench — 心率訓練區間計算機 · Peter Lau</title>
+<meta name="description" content="為耐力運動員而設的心率訓練區間計算機。三種錨定方法（%LTHR、%HRR、%HRmax），按真實 bpm 刻度繪製，並把估算誤差畫出來而非隱藏。">
+<meta name="color-scheme" content="light dark">
+<script>document.documentElement.setAttribute("data-lang","zh");</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="../zones.css">
+</head>
+<body>
+
+<nav class="sitenav">
+  <a class="logo" href="/">PETER<b>LAU</b></a>
+  <a href="/projects/">&larr; 返回作品集</a>
+</nav>
+
+<header class="mast">
+  <div class="mast-in">
+    <div>
+      <p class="eyebrow" style="margin:0 0 8px">
+        <span lang="en">Heart-rate training zones · endurance</span>
+        <span lang="zh">心率訓練區間 · 耐力運動</span>
+      </p>
+      <h1>Threshold Zone Bench</h1>
+      <p class="tagline">
+        <span lang="en">Three anchoring methods, one true bpm<i data-g="bpm"></i> scale, and the error bars nobody else shows you. Enter what you have actually measured — the page uses the strongest anchor your data supports.</span>
+        <span lang="zh">三種錨定方法、一條真實 bpm<i data-g="bpm"></i> 刻度，以及其他計算機不會告訴你的誤差範圍。輸入你實際量度過的數字，本頁會自動採用你的數據所能支持的最強錨值。</span>
+      </p>
+      <a class="crossnav" href="methodology.html">
+        <span class="arrow">→</span>
+        <span lang="en"><b>Read the methodology</b></span>
+        <span lang="zh"><b>閱讀方法學詳解</b></span>
+      </a>
+    </div>
+    <div class="mast-right">
+      <div class="langsw" role="group" aria-label="Language / 語言"><a href="../index.html">EN</a><span class="on">中文</span></div>
+      <div class="mast-meta">
+        <div>
+          <p class="eyebrow" style="margin:0"><span lang="en">Anchor</span><span lang="zh">錨值</span></p>
+          <p class="v" id="m-anchor">—</p>
+        </div>
+        <div><p class="eyebrow" style="margin:0">Zone 2</p><p class="v mono" id="m-z2">—</p></div>
+        <div><p class="eyebrow" style="margin:0">Zone 4</p><p class="v mono" id="m-z4">—</p></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+<div class="doc" style="grid-template-columns:302px minmax(0,1fr)">
+
+  <!-- ============ INPUT RAIL ============ -->
+  <div class="panel panel-pad">
+    <form id="f" autocomplete="off">
+      <fieldset>
+        <legend><span lang="en">Athlete</span><span lang="zh">運動員</span></legend>
+        <div class="field">
+          <label for="age"><span lang="en">Age</span><span lang="zh">年齡</span></label>
+          <input type="number" id="age" min="10" max="95" step="1" placeholder="—">
+        </div>
+        <div class="field">
+          <label for="sex"><span lang="en">Sex (formula selection)</span><span lang="zh">性別（用於選公式）</span></label>
+          <select id="sex">
+            <option value="m" selected>Male / 男</option>
+            <option value="f">Female / 女</option>
+            <option value="x">— / 不提供</option>
+          </select>
+          <p class="hint">
+            <span lang="en">Only used to pick a default HRmax formula, and only when no tested HRmax is entered.</span>
+            <span lang="zh">只用於選擇預設 HRmax 公式，而且只在未填實測 HRmax 時才會用到。</span>
+          </p>
+        </div>
+        <div class="field">
+          <label for="rest"><span lang="en">Resting HR</span><span lang="zh">靜止心率</span> <span class="mono" style="font-size:11px;color:var(--faint)">bpm</span></label>
+          <input type="number" id="rest" min="25" max="110" step="1" value="45">
+          <p class="hint">
+            <span lang="en">Measured lying down, before getting up, averaged over 3–5 mornings.</span>
+            <span lang="zh">平臥、未起床前量度，取 3–5 個早上的平均值。</span>
+          </p>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span lang="en">Maximum heart rate</span><span lang="zh">最大心率</span><i data-g="hrmax"></i></legend>
+        <div class="field">
+          <label for="maxtested"><span lang="en">Tested HRmax</span><span lang="zh">實測 HRmax</span> <span class="mono" style="font-size:11px;color:var(--faint)">bpm</span></label>
+          <input type="number" id="maxtested" min="120" max="230" step="1" value="196">
+          <p class="hint">
+            <span lang="en">Leave blank to estimate from age. A real number here removes the error band.</span>
+            <span lang="zh">留空則由年齡估算。填入實測值，誤差帶會消失。</span>
+          </p>
+        </div>
+        <div class="field">
+          <label for="formula" style="grid-column:1/-1"><span lang="en">Fallback formula</span><span lang="zh">後備公式</span><i data-g="regression"></i></label>
+          <select id="formula">
+            <option value="auto" selected>Auto · 自動</option>
+            <option value="tanaka">Tanaka 2001 · 208 − 0.7 × age</option>
+            <option value="gulati">Gulati 2010 · 206 − 0.88 × age</option>
+            <option value="nes">Nes 2013 · 211 − 0.64 × age</option>
+            <option value="fox">Fox · 220 − age</option>
+          </select>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend><span lang="en">Lactate threshold</span><span lang="zh">乳酸閾值</span><i data-g="lt"></i></legend>
+        <div class="field">
+          <label for="lthr">LTHR<i data-g="lthr"></i> <span class="mono" style="font-size:11px;color:var(--faint)">bpm</span></label>
+          <input type="number" id="lthr" min="90" max="220" step="1" value="176">
+          <p class="hint">
+            <span lang="en">Average HR over the <em>final 20 minutes</em> of a solo 30-minute time trial<i data-g="tt"></i>.</span>
+            <span lang="zh">獨自 30 分鐘計時測試<i data-g="tt"></i>中，<em>最後 20 分鐘</em>的平均心率。</span>
+          </p>
+        </div>
+        <div class="field" style="grid-template-columns:1fr">
+          <label for="sportRun" style="margin-bottom:2px">
+            <span lang="en">Sport (Friel<i data-g="friel"></i> zones differ)</span>
+            <span lang="zh">運動項目（Friel<i data-g="friel"></i> 的 zone 表不同）</span>
+          </label>
+          <div class="seg" role="group" aria-label="Sport">
+            <button type="button" id="sportRun" data-sport="run" aria-pressed="true"><span lang="en">Run</span><span lang="zh">跑步</span></button>
+            <button type="button" id="sportBike" data-sport="bike" aria-pressed="false"><span lang="en">Bike</span><span lang="zh">單車</span></button>
+          </div>
+          <p class="hint">
+            <span lang="en">Cycling LTHR typically sits 5–10 bpm below running LTHR. Test each sport separately.</span>
+            <span lang="zh">單車的 LTHR 通常比跑步低 5–10 bpm。兩項運動必須分開測試。</span>
+          </p>
+        </div>
+      </fieldset>
+
+      <p class="note" id="statusnote"></p>
+    </form>
+  </div>
+
+  <!-- ============ RESULTS ============ -->
+  <div>
+  <div class="panel" style="overflow:hidden">
+    <div class="tabs" role="tablist" aria-label="Anchoring method">
+      <button role="tab" data-m="lthr" aria-selected="true">% LTHR<span class="sub">Friel</span></button>
+      <button role="tab" data-m="hrr" aria-selected="false">% HRR<span class="sub">Karvonen</span></button>
+      <button role="tab" data-m="max" aria-selected="false">% HRmax<span class="sub"><span lang="en">Classic</span><span lang="zh">傳統</span></span></button>
+    </div>
+
+    <div class="anchorbar" id="anchorbar"></div>
+
+    <div class="ruler-wrap">
+      <div class="ruler" id="ruler"></div>
+      <div class="ruler-cap">
+        <span class="mono" id="rulercap"></span>
+        <span class="mono" id="axiscap"></span>
+      </div>
+    </div>
+
+    <div class="tbl-scroll">
+      <table id="ztable"><thead><tr id="zhead"></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <div class="stack">
+    <div class="panel">
+      <div class="prose" style="padding-bottom:6px">
+        <h2><span lang="en">The three methods disagree — by how much?</span><span lang="zh">三種方法互不相同 — 相差多少？</span></h2>
+        <p class="lede">
+          <span lang="en">Same athlete, same day, three legitimate textbook methods. If the spread below is larger than a few bpm, that is your honest answer about how precisely zone boundaries can be known at all.</span>
+          <span lang="zh">同一個人、同一天、三種同樣站得住腳的教科書方法。如果下面的差距大於幾 bpm，那就是「zone 界線究竟能有多精確」的誠實答案。</span>
+        </p>
+      </div>
+      <div class="tbl-scroll">
+        <table class="compare" id="cmp"><thead><tr id="chead"></tr></thead><tbody></tbody></table>
+      </div>
+      <div class="prose" style="padding-top:10px">
+        <p class="mono" id="spreadline" style="font-size:13px;color:var(--muted)"></p>
+      </div>
+    </div>
+
+    <div class="panel prose">
+      <div class="warn" style="margin:0">
+        <p lang="en"><strong>Before you test, and before you trust these numbers.</strong> Beta-blockers<i data-g="beta"></i> and other rate-controlling medication invalidate every equation here. Maximal exercise testing carries real, if small, cardiac risk — get medical clearance first if you have any cardiac history, chest pain, uncontrolled hypertension, or have been sedentary and are over roughly 40. This is a training tool, not medical advice.</p>
+        <p lang="zh"><strong>在測試之前，以及在相信這些數字之前。</strong>β-受體阻斷劑<i data-g="beta"></i>及其他控制心率的藥物會令本頁所有公式失效。最大運動測試帶有真實（雖然不大）的心臟風險 — 若你有任何心臟病史、胸痛、未受控制的高血壓，或長期缺乏運動而年齡約在 40 歲以上，請先取得醫生許可。這是訓練工具，並非醫療建議。</p>
+      </div>
+      <p style="margin-top:16px"><a class="crossnav" href="methodology.html">
+        <span class="arrow">→</span>
+        <span lang="en"><b>Full methodology, field-test protocols and limits</b></span>
+        <span lang="zh"><b>完整方法學、實地測試流程與限制</b></span>
+      </a></p>
+    </div>
+  </div>
+  </div>
+</div>
+
+<footer>
+  <p lang="en">Zone models after Joe Friel (LTHR) and conventional %HRmax / %HRR practice. HRmax equations: Tanaka, Monahan &amp; Seals 2001 (<em>JACC</em>); Gulati et al. 2010 (<em>Circulation</em>); Nes et al. 2013 (<em>Scand J Med Sci Sports</em>); Fox 1971. Standard-deviation figures are approximate values drawn from the source cohorts, shown to convey scale rather than precision.</p>
+  <p lang="zh">Zone 模型依據 Joe Friel（LTHR）及傳統 %HRmax / %HRR 做法。HRmax 公式：Tanaka、Monahan 與 Seals 2001（<em>JACC</em>）；Gulati 等 2010（<em>Circulation</em>）；Nes 等 2013（<em>Scand J Med Sci Sports</em>）；Fox 1971。標準差數值取自上述研究的約數，用以表達不確定性的量級，而非精確統計量。</p>
+  <p><span lang="en">Not medical advice</span><span lang="zh">非醫療建議</span></p>
+  <p class="sitecredit">Peter Lau · <a href="/">lauyiucheung.com</a></p>
+</footer>
+</div>
+
+<script src="../lang.js"></script>
+<script src="../glossary.js"></script>
+<script>
+(function(){
+  "use strict";
+
+  var DOC_URL = "https://claude.ai/artifact/R8rmiXoDeMYwxcVAUR49Da";
+  if (DOC_URL && /claude\.ai$/.test(location.hostname)){
+    document.querySelectorAll('a[href="methodology.html"]').forEach(function(a){
+      a.href = DOC_URL; a.target = "_blank"; a.rel = "noopener";
+    });
+  }
+
+  var FORMULAS = {
+    tanaka:{label:"Tanaka 2001", expr:"208 − 0.7 × age", fn:function(a){return 208-0.7*a;}, sd:10},
+    gulati:{label:"Gulati 2010", expr:"206 − 0.88 × age", fn:function(a){return 206-0.88*a;}, sd:10},
+    nes:{label:"Nes 2013", expr:"211 − 0.64 × age", fn:function(a){return 211-0.64*a;}, sd:11},
+    fox:{label:"Fox", expr:"220 − age", fn:function(a){return 220-a;}, sd:12}
+  };
+
+  var T = {
+    en:{
+      zhead:["Zone","Heart rate","% of anchor","What it is for",'Talk test<i data-g="talk"></i>'],
+      chead:["Method","Anchor value","Zone 2 (aerobic)","Zone 4 (threshold)","Z4 floor"],
+      rulercap:"bpm scale — zones drawn to true position, not equal widths",
+      waiting:["Waiting on input","Enter an LTHR, or an age"],
+      k_lthr:'LTHR<i data-g="lthr"></i>', k_model:"Model", k_prec:"Precision",
+      k_max:'HRmax<i data-g="hrmax"></i>', k_src:"Source", k_unc:'Uncertainty<i data-g="sd"></i>',
+      k_res:'HR reserve<i data-g="hrr"></i>',
+      v_model:'Friel<i data-g="friel"></i> five-zone',
+      v_prec:"±2–3 bpm if the 30-min TT was executed well",
+      v_tested:"Tested — no estimation error",
+      needs_lthr:"Needs an LTHR value", needs_max:"Needs a resting HR and an HRmax",
+      anchor_lthr:"bpm LTHR", anchor_res:"bpm reserve", anchor_max:"bpm max",
+      st_est:"HRmax is estimated — the shaded bands on the scale are one standard deviation of that estimate.",
+      st_test:"Tested HRmax in use — there is no estimation error to show.",
+      boundary:"boundary ±", sport:{run:"run", bike:"bike"},
+      spread_a:"Spread across methods at the Zone 4 floor: ",
+      spread_wide:" — larger than most people's Zone 4 is wide. Pick one method and stay on it; do not mix tables between sessions.",
+      spread_ok:" — close enough that the choice of method is not what limits you. Anchor quality is.",
+      zones:[
+        {name:"Recovery", tag:"Active recovery",
+         use:"<b>Flush, don't train.</b> Blood flow without adding fatigue. Between hard days and inside long warm-ups.",
+         talk:"Full sentences, nose breathing, feels almost too easy."},
+        {name:"Endurance", tag:"Aerobic base",
+         use:"<b>The bulk of the week.</b> Fat oxidation, capillary and mitochondrial density<i data-g=\"adapt\"></i>, durability. Long steady sessions live here.",
+         talk:"Comfortable conversation; you could hold it for hours."},
+        {name:"Tempo", tag:"Moderate domain",
+         use:"<b>Use sparingly.</b> Real aerobic stimulus, but carries recovery cost close to threshold work without the same return.",
+         talk:"Short sentences only. Breathing noticeably rhythmic."},
+        {name:"Threshold", tag:"Lactate threshold",
+         use:"<b>Raises the ceiling on sustainable pace.</b> Cruise intervals and steady blocks of 8–20 min, at the edge of metabolic steady state<i data-g=\"steady\"></i>.",
+         talk:"A few words at a time. Sustainable 40–60 min at most."},
+        {name:"VO2max", tag:"Severe domain",
+         use:"<b>Aerobic power.</b> Intervals of 3–8 minutes with full recoveries. Heart rate lags<i data-g=\"lag\"></i>, so shorter reps need pace or power instead.",
+         talk:"No talking. Breathing at its limit."}
+      ]
+    },
+    zh:{
+      zhead:["區間","心率","佔錨值","用途",'談話測試<i data-g="talk"></i>'],
+      chead:["方法","錨值","Zone 2（有氧）","Zone 4（閾值）","Z4 下限"],
+      rulercap:"bpm 刻度 — 各 zone 按真實位置繪製，並非等闊",
+      waiting:["等待輸入","請填入 LTHR 或年齡"],
+      k_lthr:'LTHR<i data-g="lthr"></i>', k_model:"模型", k_prec:"精確度",
+      k_max:'HRmax<i data-g="hrmax"></i>', k_src:"來源", k_unc:'不確定性<i data-g="sd"></i>',
+      k_res:'心率儲備<i data-g="hrr"></i>',
+      v_model:'Friel<i data-g="friel"></i> 五區間',
+      v_prec:"若 30 分鐘測試執行得宜，誤差約 ±2–3 bpm",
+      v_tested:"實測 — 無估算誤差",
+      needs_lthr:"需要 LTHR 數值", needs_max:"需要靜止心率及 HRmax",
+      anchor_lthr:"bpm LTHR", anchor_res:"bpm 儲備", anchor_max:"bpm 最大",
+      st_est:"HRmax 為估算值 — 刻度上的陰影帶代表該估算的一個標準差。",
+      st_test:"正在使用實測 HRmax — 沒有估算誤差需要顯示。",
+      boundary:"界線 ±", sport:{run:"跑步", bike:"單車"},
+      spread_a:"三種方法在 Zone 4 下限的差距：",
+      spread_wide:" — 比大多數人的 Zone 4 本身還要闊。選定一種方法就一直用，不要在不同課節之間換表。",
+      spread_ok:" — 差距夠小，方法選擇並非限制你的因素，錨值的質素才是。",
+      zones:[
+        {name:"恢復", tag:"主動恢復",
+         use:"<b>促進循環，不是訓練。</b>增加血流而不增加疲勞。用於高強度日之間，以及長時間熱身之內。",
+         talk:"可講完整句子，能用鼻呼吸，感覺近乎太輕鬆。"},
+        {name:"耐力", tag:"有氧基礎",
+         use:"<b>一週訓練量的主體。</b>脂肪氧化、微血管與粒線體密度<i data-g=\"adapt\"></i>、耐久力。長時間穩定課節屬於這裡。",
+         talk:"可舒適對話，能維持數小時。"},
+        {name:"節奏", tag:"中等區間",
+         use:"<b>謹慎使用。</b>有真實的有氧刺激，但恢復成本接近閾值訓練，回報卻不相同。",
+         talk:"只能說短句，呼吸明顯轉為有節奏。"},
+        {name:"閾值", tag:"乳酸閾值",
+         use:"<b>提升可持續配速的上限。</b>巡航間歇與穩定段落，每次 8–20 分鐘，位於代謝穩態<i data-g=\"steady\"></i>的邊緣。",
+         talk:"一次只能講幾個字，最多維持 40–60 分鐘。"},
+        {name:"VO2max", tag:"重度區間",
+         use:"<b>有氧功率。</b>3–8 分鐘間歇，配完整恢復。心率有滯後<i data-g=\"lag\"></i>，更短的反覆須改用配速或功率。",
+         talk:"無法說話，呼吸達到極限。"}
+      ]
+    }
+  };
+
+  var PCT5 = [[0.50,0.60],[0.60,0.70],[0.70,0.80],[0.80,0.90],[0.90,1.00]];
+  var FRIEL = {
+    run:  {bounds:[0.85,0.90,0.95,1.00], top:1.06, labels:["< 85%","85–89%","90–94%","95–99%","100%+"]},
+    bike: {bounds:[0.81,0.90,0.94,1.00], top:1.06, labels:["< 81%","81–89%","90–93%","94–99%","100%+"]}
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var state = { method:"lthr", sport:"run" };
+  function L(){ return (window.Lang && window.Lang.current() === "zh") ? T.zh : T.en; }
+  function num(el){ var v = parseFloat(el.value); return isFinite(v) ? v : null; }
+
+  function readInputs(){
+    var age = num($("age")), sex = $("sex").value;
+    var tested = num($("maxtested"));
+    var key = $("formula").value;
+    if (key === "auto") key = (sex === "f") ? "gulati" : "tanaka";
+    var f = FORMULAS[key];
+    var est = age ? Math.round(f.fn(age)) : null;
+    return { age:age, rest:num($("rest")), lthr:num($("lthr")), tested:tested,
+             hrmax: tested || est, estimated: !tested, sd: tested ? 0 : f.sd, f:f };
+  }
+
+  function zonesFor(method, d){
+    var z = [], i, lo, hi;
+    if (method === "max" && d.hrmax){
+      for (i=0;i<5;i++){
+        lo = PCT5[i][0]*d.hrmax; hi = PCT5[i][1]*d.hrmax;
+        z.push({lo:lo, hi:hi, sdlo:PCT5[i][0]*d.sd,
+                pct:Math.round(PCT5[i][0]*100)+"–"+Math.round(PCT5[i][1]*100)+"%"});
+      }
+      return {zones:z, ceil:d.hrmax, ok:true};
+    }
+    if (method === "hrr" && d.hrmax && d.rest != null){
+      var R = d.hrmax - d.rest;
+      for (i=0;i<5;i++){
+        lo = d.rest + PCT5[i][0]*R; hi = d.rest + PCT5[i][1]*R;
+        z.push({lo:lo, hi:hi, sdlo:PCT5[i][0]*d.sd,
+                pct:Math.round(PCT5[i][0]*100)+"–"+Math.round(PCT5[i][1]*100)+"%"});
+      }
+      return {zones:z, ceil:d.hrmax, ok:true};
+    }
+    if (method === "lthr" && d.lthr){
+      var m = FRIEL[state.sport], b = m.bounds, Lv = d.lthr;
+      var edges = [null, b[0], b[1], b[2], b[3], m.top];
+      for (i=0;i<5;i++){
+        lo = (i===0) ? null : edges[i]*Lv;
+        hi = (i===4) ? m.top*Lv : edges[i+1]*Lv;
+        z.push({lo:lo, hi:hi, sdlo:0, pct:m.labels[i], open:(i===0||i===4)});
+      }
+      return {zones:z, ceil:m.top*Lv, ok:true};
+    }
+    return {ok:false};
+  }
+
+  function bpm(v){ return Math.round(v); }
+
+  function rangeText(z, i, d){
+    if (i===0 && z.lo===null) return "&lt; "+bpm(z.hi);
+    if (i===4 && z.open){
+      var Lv = d.lthr;
+      return "&ge; "+bpm(z.lo)+
+        ' <em>5a '+bpm(Lv)+"–"+bpm(1.02*Lv)+" &middot; 5b "+bpm(1.03*Lv)+"–"+bpm(1.06*Lv)+
+        " &middot; 5c "+bpm(1.06*Lv)+'+<i data-g="z5abc"></i></em>';
+    }
+    return bpm(z.lo)+" – "+bpm(z.hi-1);
+  }
+
+  function marker(p, label){
+    return '<div class="marker" style="left:'+p.toFixed(2)+'%"><i>'+label+'</i></div>';
+  }
+
+  function render(){
+    var t = L();
+    var d = readInputs();
+    var r = zonesFor(state.method, d);
+
+    $("zhead").innerHTML = t.zhead.map(function(h){ return "<th>"+h+"</th>"; }).join("");
+    $("chead").innerHTML = t.chead.map(function(h){ return "<th>"+h+"</th>"; }).join("");
+    $("rulercap").textContent = t.rulercap;
+
+    if (!r.ok){
+      var order = ["lthr","hrr","max"], k;
+      for (k=0;k<order.length;k++){
+        var tr = zonesFor(order[k], d);
+        if (tr.ok){ state.method = order[k]; r = tr; break; }
+      }
+      syncTabs();
+    }
+    if (!r.ok){
+      $("anchorbar").innerHTML = '<div><div class="k">'+t.waiting[0]+'</div><div class="v">'+t.waiting[1]+'</div></div>';
+      $("ruler").innerHTML = ""; $("ztable").querySelector("tbody").innerHTML = "";
+      $("cmp").querySelector("tbody").innerHTML = ""; $("spreadline").textContent = "";
+      return;
+    }
+
+    var ab = [];
+    if (state.method === "lthr"){
+      ab.push([t.k_lthr+" ("+t.sport[state.sport]+")", bpm(d.lthr)+" bpm"]);
+      ab.push([t.k_model, t.v_model]);
+      ab.push([t.k_prec, t.v_prec]);
+    } else {
+      ab.push([t.k_max, bpm(d.hrmax)+" bpm"]);
+      ab.push([t.k_src, d.estimated ? d.f.label+" · "+d.f.expr : t.v_tested]);
+      if (d.estimated) ab.push([t.k_unc, "±"+d.sd+" bpm (1 SD)"]);
+      if (state.method === "hrr") ab.push([t.k_res, bpm(d.hrmax - d.rest)+" bpm"]);
+    }
+    $("anchorbar").innerHTML = ab.map(function(p){
+      return '<div><div class="k">'+p[0]+'</div><div class="v">'+p[1]+'</div></div>';
+    }).join("");
+
+    var lows = r.zones.map(function(z){ return z.lo; }).filter(function(v){ return v!==null; });
+    var axLo = Math.floor((Math.min.apply(null, lows.concat(d.rest!=null?[d.rest]:[])) - 8)/10)*10;
+    var axHi = Math.ceil((r.ceil + 8)/10)*10;
+    var span = axHi - axLo;
+    var pos = function(v){ return ((v - axLo)/span)*100; };
+
+    var html = "";
+    r.zones.forEach(function(z,i){
+      var lo = (z.lo===null) ? axLo : z.lo;
+      var hi = Math.min(z.hi, axHi);
+      var left = pos(lo), w = Math.max(pos(hi)-left, 0.6);
+      var inner = "Z"+(i+1);
+      if (w > 14) inner += "  " + bpm(lo) + "–" + bpm(hi);
+      html += '<div class="seg-band" style="left:'+left.toFixed(2)+'%;width:'+w.toFixed(2)+
+              '%;background:var(--z'+(i+1)+')"><span>'+inner+'</span></div>';
+    });
+    if (d.estimated && state.method !== "lthr"){
+      r.zones.forEach(function(z,i){
+        if (i===0 || !z.sdlo) return;
+        var l = pos(z.lo - z.sdlo), w = pos(z.lo + z.sdlo) - l;
+        html += '<div class="unc" style="left:'+l.toFixed(2)+'%;width:'+w.toFixed(2)+'%"></div>';
+      });
+    }
+    for (var tv = Math.ceil(axLo/10)*10; tv <= axHi; tv += 10){
+      html += '<div class="tick" style="left:'+pos(tv).toFixed(2)+'%"><i>'+tv+'</i></div>';
+    }
+    if (d.rest != null && d.rest >= axLo) html += marker(pos(d.rest), "REST "+bpm(d.rest));
+    if (state.method === "lthr") html += marker(pos(d.lthr), "LTHR "+bpm(d.lthr));
+    else html += marker(pos(d.hrmax), "MAX "+bpm(d.hrmax));
+    $("ruler").innerHTML = html;
+    $("axiscap").textContent = axLo + "–" + axHi + " bpm";
+
+    $("ztable").querySelector("tbody").innerHTML = r.zones.map(function(z,i){
+      var meta = t.zones[i];
+      var unc = (d.estimated && state.method!=="lthr" && i>0)
+        ? '<em>'+t.boundary+Math.round(z.sdlo)+' bpm</em>' : '';
+      return '<tr>'+
+        '<td><div class="zname"><span class="chip" style="background:var(--z'+(i+1)+')"></span>'+
+        '<span class="zn">Z'+(i+1)+' '+meta.name+'<small>'+meta.tag+'</small></span></div></td>'+
+        '<td class="bpm">'+rangeText(z,i,d)+unc+'</td>'+
+        '<td class="pct">'+z.pct+'</td>'+
+        '<td class="feel">'+meta.use+'</td>'+
+        '<td class="talk">'+meta.talk+'</td></tr>';
+    }).join("");
+
+    $("m-anchor").innerHTML = state.method==="lthr" ? "% LTHR" : (state.method==="hrr" ? "% HRR" : "% HRmax");
+    $("m-z2").textContent = bpm(r.zones[1].lo)+"–"+bpm(r.zones[1].hi-1);
+    $("m-z4").textContent = bpm(r.zones[3].lo)+"–"+bpm(r.zones[3].hi-1);
+
+    renderCompare(d, t);
+    $("statusnote").textContent = d.estimated ? t.st_est : t.st_test;
+
+    if (window.Glossary) window.Glossary.upgrade(document);
+  }
+
+  function renderCompare(d, t){
+    var methods = [
+      {k:"lthr", name:"% LTHR", sub:"Friel · "+t.sport[state.sport]},
+      {k:"hrr",  name:"% HRR",  sub:"Karvonen"},
+      {k:"max",  name:"% HRmax", sub:d.estimated ? (d.f.label) : (t.v_tested)}
+    ];
+    var body = "", floors = [];
+    methods.forEach(function(m){
+      var r = zonesFor(m.k, d);
+      if (!r.ok){
+        body += '<tr><td class="m">'+m.name+'<small>'+m.sub+'</small></td>'+
+                '<td colspan="4" class="pct">'+(m.k==="lthr"?t.needs_lthr:t.needs_max)+'</td></tr>';
+        return;
+      }
+      var anchorTxt = m.k==="lthr" ? bpm(d.lthr)+" "+t.anchor_lthr
+                    : m.k==="hrr"  ? bpm(d.hrmax-d.rest)+" "+t.anchor_res
+                    : bpm(d.hrmax)+" "+t.anchor_max;
+      floors.push(r.zones[3].lo);
+      body += '<tr><td class="m">'+m.name+'<small>'+m.sub+'</small></td>'+
+              '<td class="pct">'+anchorTxt+'</td>'+
+              '<td class="bpm">'+bpm(r.zones[1].lo)+"–"+bpm(r.zones[1].hi-1)+'</td>'+
+              '<td class="bpm">'+bpm(r.zones[3].lo)+"–"+bpm(r.zones[3].hi-1)+'</td>'+
+              '<td class="bpm">'+bpm(r.zones[3].lo)+'</td></tr>';
+    });
+    $("cmp").querySelector("tbody").innerHTML = body;
+    if (floors.length > 1){
+      var spread = Math.round(Math.max.apply(null,floors) - Math.min.apply(null,floors));
+      $("spreadline").innerHTML = t.spread_a+'<strong style="color:var(--z5)">'+spread+' bpm</strong>'+
+        (spread >= 8 ? t.spread_wide : t.spread_ok);
+    } else { $("spreadline").textContent = ""; }
+  }
+
+  function syncTabs(){
+    document.querySelectorAll('.tabs button').forEach(function(b){
+      b.setAttribute("aria-selected", b.dataset.m === state.method ? "true" : "false");
+    });
+  }
+
+  document.querySelectorAll('.tabs button').forEach(function(b){
+    b.addEventListener("click", function(){ state.method = b.dataset.m; syncTabs(); render(); });
+  });
+  document.querySelectorAll('.seg button').forEach(function(b){
+    b.addEventListener("click", function(){
+      state.sport = b.dataset.sport;
+      document.querySelectorAll('.seg button').forEach(function(x){
+        x.setAttribute("aria-pressed", x===b ? "true" : "false");
+      });
+      render();
+    });
+  });
+  $("f").addEventListener("input", render);
+  document.addEventListener("langchange", render);
+  render();
+})();
+</script>
+
+</body>
+</html>

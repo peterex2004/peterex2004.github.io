@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Why Your Zones Are Wrong — Methodology · Peter Lau</title>
+<meta name="description" content="How heart-rate training zones are actually built: which anchor to use, the four HRmax equations and their cohorts, a fully worked error propagation, and how to spend a week across the five zones.">
+<meta name="color-scheme" content="light dark">
+<script>document.documentElement.setAttribute("data-lang","en");</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="zones.css">
+</head>
+<body>
+
+<nav class="sitenav">
+  <a class="logo" href="/">PETER<b>LAU</b></a>
+  <a href="/projects/">&larr; Back to projects</a>
+</nav>
+
+<header class="mast">
+  <div class="mast-in">
+    <div>
+      <p class="eyebrow" style="margin:0 0 8px">
+        <span lang="en">Methodology · hover any <span style="color:var(--ink)">?</span> for a definition</span>
+        <span lang="zh">方法學 · 將滑鼠指向任何 <span style="color:var(--ink)">?</span> 即可看解釋</span>
+      </p>
+      <h1><span lang="en">Why Your Zones Are Wrong</span><span lang="zh">為何你的 Zone 是錯的</span></h1>
+      <p class="tagline">
+        <span lang="en">Every heart-rate zone table rests on one measured or guessed number. This page explains which number to use, how the guessing works, and how much of the answer is noise.</span>
+        <span lang="zh">每一張心率 zone 表，都建立在一個量度出來或估算出來的數字之上。本頁說明應該用哪一個數字、估算是怎樣運作的，以及答案裡面有多少其實只是雜訊。</span>
+      </p>
+      <a class="crossnav" href="index.html">
+        <span class="arrow">←</span>
+        <span lang="en"><b>Back to the calculator</b></span>
+        <span lang="zh"><b>返回計算機</b></span>
+      </a>
+    </div>
+    <div class="mast-right">
+      <div class="langsw" role="group" aria-label="Language / 語言"><span class="on">EN</span><a href="zh/methodology.html">中文</a></div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap narrow">
+<div class="doc">
+
+  <nav class="toc" aria-label="Contents">
+    <p class="eyebrow"><span lang="en">Contents</span><span lang="zh">目錄</span></p>
+    <ol>
+      <li><a href="#s1"><span lang="en">Zones need an anchor</span><span lang="zh">Zone 需要一個錨</span></a></li>
+      <li><a href="#s2"><span lang="en">Which anchor you get</span><span lang="zh">你會得到哪個錨</span></a></li>
+      <li><a href="#s3"><span lang="en">Anchor A — % LTHR</span><span lang="zh">錨 A — % LTHR</span></a></li>
+      <li><a href="#s4"><span lang="en">Anchor B — % HRR</span><span lang="zh">錨 B — % HRR</span></a></li>
+      <li><a href="#s5"><span lang="en">Anchor C — % HRmax</span><span lang="zh">錨 C — % HRmax</span></a></li>
+      <li><a href="#s5b"><span lang="en">Pros and cons</span><span lang="zh">優缺點對照</span></a></li>
+      <li><a href="#s6"><span lang="en">The four equations</span><span lang="zh">四條公式</span></a></li>
+      <li><a href="#s7"><span lang="en">The error, worked through</span><span lang="zh">誤差的完整推導</span></a></li>
+      <li><a href="#s8"><span lang="en">Zone by zone</span><span lang="zh">逐個 Zone 拆解</span></a></li>
+      <li><a href="#s8b"><span lang="en">Using the five zones</span><span lang="zh">五個 Zone 的用法</span></a></li>
+      <li><a href="#s9"><span lang="en">Field tests</span><span lang="zh">實地測試</span></a></li>
+      <li><a href="#s10"><span lang="en">What HR cannot tell you</span><span lang="zh">心率告訴不了你的事</span></a></li>
+      <li><a href="#s11"><span lang="en">References</span><span lang="zh">參考文獻</span></a></li>
+    </ol>
+  </nav>
+
+  <div>
+
+  <section class="chap panel prose" id="s1">
+    <div class="chaphead"><span class="chapnum">01</span></div>
+    <h2><span lang="en">Zones are a percentage. Of what?</span><span lang="zh">Zone 是百分比。但究竟是誰的百分比？</span></h2>
+    <div lang="en">
+      <p>A training zone is never an absolute number. It is always a fraction of some reference heart rate — the <strong>anchor</strong>. Choose a different anchor and every boundary moves, sometimes by more than the width of a zone.</p>
+      <p>There are three anchors in serious use, and they are not equally good. They differ in what they measure, how hard they are to obtain, and how much of you they actually capture.</p>
+    </div>
+    <div lang="zh">
+      <p>訓練 zone 從來不是一個絕對數字，它永遠是某個參考心率的百分比 — 我們稱之為<strong>錨值</strong>。換一個錨值，所有界線都會移位，有時移動幅度比一個 zone 本身的闊度還要大。</p>
+      <p>實際被認真使用的錨值有三個，而它們的質素並不相同。三者的分別在於：量度的是什麼、取得的難度，以及究竟捕捉到你多少個人特性。</p>
+    </div>
+  </section>
+
+  <section class="chap panel prose" id="s2">
+    <div class="chaphead"><span class="chapnum">02</span></div>
+    <h2><span lang="en">Which anchor you get depends on what you have measured</span><span lang="zh">你會得到哪個錨，取決於你量度過什麼</span></h2>
+    <p class="lede">
+      <span lang="en">The calculator works down this chain and stops at the first line you can satisfy. It is ordered by quality, not by convenience.</span>
+      <span lang="zh">計算機會沿這條鏈往下走，停在第一個你能夠滿足的條件。排序依據是質素，不是方便程度。</span>
+    </p>
+    <div class="flow">
+      <div class="flow-row">
+        <div class="flow-q"><span lang="en">If you have</span><span lang="zh">如果你有</span></div>
+        <div class="flow-b">
+          <b><span lang="en">An LTHR<i data-g="lthr"></i> from a 30-minute time trial<i data-g="tt"></i></span><span lang="zh">來自 30 分鐘計時測試<i data-g="tt"></i>的 LTHR<i data-g="lthr"></i></span></b>
+          <span lang="en">Zones are set as a percentage of threshold.</span>
+          <span lang="zh">Zone 以閾值的百分比設定。</span>
+        </div>
+        <span class="flow-tag tag-best">% LTHR</span>
+      </div>
+      <div class="flow-row">
+        <div class="flow-q"><span lang="en">Otherwise</span><span lang="zh">否則</span></div>
+        <div class="flow-b">
+          <b><span lang="en">A resting HR and an HRmax<i data-g="hrmax"></i></span><span lang="zh">靜止心率加 HRmax<i data-g="hrmax"></i></span></b>
+          <span lang="en">Zones are set as a percentage of heart rate reserve<i data-g="hrr"></i>.</span>
+          <span lang="zh">Zone 以心率儲備<i data-g="hrr"></i>的百分比設定。</span>
+        </div>
+        <span class="flow-tag tag-ok">% HRR</span>
+      </div>
+      <div class="flow-row">
+        <div class="flow-q"><span lang="en">Otherwise</span><span lang="zh">否則</span></div>
+        <div class="flow-b">
+          <b><span lang="en">Only an age</span><span lang="zh">只有年齡</span></b>
+          <span lang="en">Zones are a flat percentage of an estimated HRmax.</span>
+          <span lang="zh">Zone 只是估算 HRmax 的固定百分比。</span>
+        </div>
+        <span class="flow-tag tag-last">% HRmax</span>
+      </div>
+    </div>
+    <p lang="en">Nothing stops you from switching tabs and reading all three. You should — the gap between them is the most informative number on the calculator page.</p>
+    <p lang="zh">你當然可以切換分頁把三種都看一遍。事實上你應該這樣做 — 它們之間的差距，是整個計算機頁面上資訊量最高的一個數字。</p>
+  </section>
+
+  <section class="chap panel prose" id="s3">
+    <div class="chaphead"><span class="chapnum">03</span></div>
+    <h2><span lang="en">Anchor A — % LTHR (Friel<i data-g="friel"></i>)</span><span lang="zh">錨 A — % LTHR（Friel<i data-g="friel"></i>）</span></h2>
+    <div lang="en">
+      <p>Anchoring on the lactate threshold<i data-g="lt"></i> is the strongest of the three, for a reason that has nothing to do with precision and everything to do with what the number means.</p>
+      <p><strong>HRmax barely changes with training. Threshold changes a great deal.</strong> A year of good work might move your HRmax by nothing at all, while moving your threshold up by 10 bpm or more. Anchoring on a fixed number to measure a moving one is backwards. Anchor on the thing that moves, and your zones move with your fitness instead of going stale.</p>
+      <p>Friel publishes separate tables for running and cycling, because threshold HR genuinely differs between the two — cycling LTHR typically sits 5–10 bpm below running LTHR, largely a consequence of muscle mass recruited and body position. Test each sport separately; do not carry one number across.</p>
+      <h3>Boundaries used</h3>
+      <dl class="formulas">
+        <dt>Run</dt><dd>Z1 under 85% · Z2 85–89% · Z3 90–94% · Z4 95–99% · Z5 100% and above<i data-g="z5abc"></i></dd>
+        <dt>Bike</dt><dd>Z1 under 81% · Z2 81–89% · Z3 90–93% · Z4 94–99% · Z5 100% and above</dd>
+      </dl>
+    </div>
+    <div lang="zh">
+      <p>以乳酸閾值<i data-g="lt"></i>做錨，是三者中最強的一個。理由與「準不準」無關，而是與這個數字代表什麼有關。</p>
+      <p><strong>HRmax 幾乎不會因訓練而改變，但閾值會大幅改變。</strong>一年扎實訓練可能令你的 HRmax 完全不動，卻能把閾值推高 10 bpm 或更多。用一個不會動的數字，去量度一樣會動的東西，本身就是倒轉了。改用會動的那一個做錨，你的 zone 就會隨體能一起移動，而不是逐漸過時。</p>
+      <p>Friel 為跑步和單車分別發表了不同的表，因為兩者的閾值心率確實有差異 — 單車的 LTHR 通常比跑步低 5–10 bpm，主要源於動用的肌肉量與身體姿勢不同。兩項運動必須分開測試，不可把一個數字直接搬過去。</p>
+      <h3>採用的界線</h3>
+      <dl class="formulas">
+        <dt>跑步</dt><dd>Z1 低於 85% · Z2 85–89% · Z3 90–94% · Z4 95–99% · Z5 100% 及以上<i data-g="z5abc"></i></dd>
+        <dt>單車</dt><dd>Z1 低於 81% · Z2 81–89% · Z3 90–93% · Z4 94–99% · Z5 100% 及以上</dd>
+      </dl>
+    </div>
+  </section>
+
+  <section class="chap panel prose" id="s4">
+    <div class="chaphead"><span class="chapnum">04</span></div>
+    <h2><span lang="en">Anchor B — % HRR, the Karvonen method<i data-g="karvonen"></i></span><span lang="zh">錨 B — % HRR，即 Karvonen 法<i data-g="karvonen"></i></span></h2>
+    <p lang="en">Heart rate reserve is HRmax minus resting HR: the range your heart actually has to work in. Zones are placed inside that range rather than on the raw scale:</p>
+    <p lang="zh">心率儲備 = HRmax 減靜止心率，即心臟實際可以運作的範圍。Zone 是放在這個範圍之內，而不是放在原始刻度上：</p>
+    <div class="calcbox">
+      <dl>
+        <dt><span lang="en">Target heart rate</span><span lang="zh">目標心率</span></dt>
+        <dd>rest + p × (max − rest)</dd>
+      </dl>
+    </div>
+    <div lang="en">
+      <p>The ACSM<i data-g="acsm"></i> recommends this for exercise prescription, and the reason is physiological rather than aesthetic: <strong>%HRR corresponds to %VO2 reserve<i data-g="vo2r"></i>, whereas %HRmax does not correspond nearly as well to %VO2max<i data-g="vo2max"></i>.</strong> You are getting closer to prescribing oxygen uptake, which is what actually drives the adaptation.</p>
+      <p>It also individualises. Two athletes with an identical HRmax of 185 but resting heart rates of 42 and 72 have reserves of 143 and 113 bpm. On %HRmax they get identical zones, which is plainly wrong. On %HRR they do not.</p>
+      <p>The cost: it needs an honest resting heart rate — lying down, before you get out of bed, averaged over several mornings. A number taken sitting at a desk is not a resting heart rate and will quietly distort every zone.</p>
+    </div>
+    <div lang="zh">
+      <p>ACSM<i data-g="acsm"></i> 推薦用這個方法開運動處方，理由是生理上的，不是美觀上的：<strong>%HRR 對應的是 %VO2 reserve<i data-g="vo2r"></i>，而 %HRmax 對應 %VO2max<i data-g="vo2max"></i> 的吻合程度差得多。</strong>換言之，你更接近於直接處方攝氧量，而攝氧量才是真正驅動適應的因素。</p>
+      <p>它同時具備個人化能力。兩名運動員 HRmax 同樣是 185，但靜止心率分別是 42 與 72，儲備就分別是 143 與 113 bpm。用 %HRmax 他們會得到完全相同的 zone，這顯然不對；用 %HRR 就不會。</p>
+      <p>代價是：它需要一個誠實的靜止心率 — 平臥、未起床前量度，取數個早上的平均值。坐在辦公桌前量到的數字不是靜止心率，它會悄悄扭曲你每一個 zone。</p>
+    </div>
+  </section>
+
+  <section class="chap panel prose" id="s5">
+    <div class="chaphead"><span class="chapnum">05</span></div>
+    <h2><span lang="en">Anchor C — % HRmax, and why it is last</span><span lang="zh">錨 C — % HRmax，以及它為何排最後</span></h2>
+    <div lang="en">
+      <p>The classic 50/60/70/80/90/100% split is the one printed on gym posters. It is the weakest of the three because it throws away the only piece of individual information most people already have: their resting heart rate.</p>
+      <p>Use it when you have nothing else. Do not use it because it is familiar.</p>
+    </div>
+    <div lang="zh">
+      <p>健身室海報上印的 50/60/70/80/90/100% 就是這一個。它是三者中最弱的，因為它把大多數人本來已經擁有的唯一一項個人化資料丟掉了：靜止心率。</p>
+      <p>沒有其他選擇時才用它。不要因為熟悉就用它。</p>
+    </div>
+  </section>
+
+
+  <section class="chap panel prose" id="s5b">
+    <div class="chaphead"><span class="chapnum">06</span></div>
+    <h2><span lang="en">Pros and cons, side by side</span><span lang="zh">三種方法優缺點對照</span></h2>
+    <p class="lede">
+      <span lang="en">Each anchor buys you something and costs you something. Read the cost before you choose.</span>
+      <span lang="zh">每個錨值都有得著，也有代價。選之前先看代價。</span>
+    </p>
+
+    <div class="pc">
+      <div class="pc-card">
+        <h3>% LTHR<i data-g="lthr"></i></h3>
+        <span class="rank"><span lang="en">Strongest · Friel</span><span lang="zh">最強 · Friel</span></span>
+        <div class="pc-body"><div>
+        <p class="pc-head"><span lang="en">Pros</span><span lang="zh">優點</span></p>
+        <ul class="pc-list pro">
+          <li lang="en">Anchored on the boundary that actually limits endurance performance.</li>
+          <li lang="zh">以真正限制耐力表現的那條界線為錨。</li>
+          <li lang="en">Rises as you get fitter, so the zones stay current instead of going stale.</li>
+          <li lang="zh">會隨體能進步而上升，所以 zone 保持貼近現況，不會過時。</li>
+          <li lang="en">Testable at home — no lab, nothing beyond a heart-rate monitor.</li>
+          <li lang="zh">可自行測試 — 不需實驗室，除心率監測外無需任何器材。</li>
+          <li lang="en">Sport-specific: separate published tables for running and cycling.</li>
+          <li lang="zh">具運動專項性：跑步與單車各有已發表的獨立表格。</li>
+        </ul>
+        </div><div>
+        <p class="pc-head"><span lang="en">Cons</span><span lang="zh">缺點</span></p>
+        <ul class="pc-list con">
+          <li lang="en">Demands a genuinely maximal 30-minute effort, and a recovery day after it.</li>
+          <li lang="zh">需要一次真正的 30 分鐘全力測試，之後還要一天恢復。</li>
+          <li lang="en">Goes stale: retest every 6–10 weeks or the zones drift out of date.</li>
+          <li lang="zh">會過時：每 6–10 週要重測，否則 zone 會脫節。</li>
+          <li lang="en">A badly paced test produces a confidently wrong number.</li>
+          <li lang="zh">配速失當的測試會產出一個「看起來很肯定」的錯誤數字。</li>
+          <li lang="en">A separate test is needed for each sport.</li>
+          <li lang="zh">每項運動都要分開測試一次。</li>
+        </ul>
+        </div></div>
+        <p class="pc-use">
+          <b><span lang="en">Use when</span><span lang="zh">何時使用</span></b>
+          <span lang="en">You train seriously and will actually do the test.</span>
+          <span lang="zh">你認真訓練，而且真的會去做那個測試。</span>
+        </p>
+      </div>
+
+      <div class="pc-card">
+        <h3>% HRR<i data-g="hrr"></i></h3>
+        <span class="rank"><span lang="en">Solid · Karvonen</span><span lang="zh">穩健 · Karvonen</span></span>
+        <div class="pc-body"><div>
+        <p class="pc-head"><span lang="en">Pros</span><span lang="zh">優點</span></p>
+        <ul class="pc-list pro">
+          <li lang="en">Individualises through resting HR, so two athletes are not treated as one.</li>
+          <li lang="zh">透過靜止心率個人化，不會把兩個不同的人當成同一個。</li>
+          <li lang="en">Maps to %VO2 reserve<i data-g="vo2r"></i> — the closest physiological correspondence of the three.</li>
+          <li lang="zh">對應 %VO2 reserve<i data-g="vo2r"></i> — 三者中生理吻合度最高。</li>
+          <li lang="en">ACSM-recommended<i data-g="acsm"></i> for exercise prescription.</li>
+          <li lang="zh">ACSM 推薦<i data-g="acsm"></i>用於運動處方。</li>
+          <li lang="en">No maximal test needed if you already know your HRmax.</li>
+          <li lang="zh">若已知 HRmax，毋須再做最大測試。</li>
+        </ul>
+        </div><div>
+        <p class="pc-head"><span lang="en">Cons</span><span lang="zh">缺點</span></p>
+        <ul class="pc-list con">
+          <li lang="en">Still depends on HRmax, so it inherits that error whenever HRmax is estimated.</li>
+          <li lang="zh">仍然依賴 HRmax，所以只要 HRmax 是估算的，就會繼承那個誤差。</li>
+          <li lang="en">Resting HR is easy to measure badly — it needs several mornings, lying down.</li>
+          <li lang="zh">靜止心率很容易量錯 — 必須平臥、連續數個早上取平均。</li>
+          <li lang="en">Resting HR drifts with fatigue and illness, moving zones on exactly the wrong days.</li>
+          <li lang="zh">靜止心率會隨疲勞與生病漂移，偏偏在最不該變動的日子改動你的 zone。</li>
+          <li lang="en">Does not track training adaptation the way threshold does.</li>
+          <li lang="zh">不像閾值那樣能反映訓練適應。</li>
+        </ul>
+        </div></div>
+        <p class="pc-use">
+          <b><span lang="en">Use when</span><span lang="zh">何時使用</span></b>
+          <span lang="en">You have a reliable HRmax and resting HR, but no LTHR yet.</span>
+          <span lang="zh">你有可靠的 HRmax 與靜止心率，但仍未有 LTHR。</span>
+        </p>
+      </div>
+
+      <div class="pc-card">
+        <h3>% HRmax<i data-g="hrmax"></i></h3>
+        <span class="rank"><span lang="en">Last resort · Classic</span><span lang="zh">最後選擇 · 傳統</span></span>
+        <div class="pc-body"><div>
+        <p class="pc-head"><span lang="en">Pros</span><span lang="zh">優點</span></p>
+        <ul class="pc-list pro">
+          <li lang="en">Needs the least data — an age alone will produce a table.</li>
+          <li lang="zh">所需資料最少 — 只要年齡就能產出一張表。</li>
+          <li lang="en">Universally understood, and it matches most watch and gym defaults.</li>
+          <li lang="zh">人人看得懂，而且與大多數手錶和健身室的預設一致。</li>
+          <li lang="en">No test required at all.</li>
+          <li lang="zh">完全不需要做任何測試。</li>
+        </ul>
+        </div><div>
+        <p class="pc-head"><span lang="en">Cons</span><span lang="zh">缺點</span></p>
+        <ul class="pc-list con">
+          <li lang="en">Discards resting HR entirely — a resting HR of 42 and one of 72 get identical zones.</li>
+          <li lang="zh">完全丟棄靜止心率 — 靜止 42 與靜止 72 會得到一模一樣的 zone。</li>
+          <li lang="en">Weakest correspondence to oxygen uptake of the three methods.</li>
+          <li lang="zh">三者中與攝氧量的對應最弱。</li>
+          <li lang="en">With an estimated HRmax, boundaries carry ±8 bpm or worse.</li>
+          <li lang="zh">若 HRmax 為估算值，界線誤差達 ±8 bpm 或更差。</li>
+          <li lang="en">The zones never move, however much fitter you get.</li>
+          <li lang="zh">無論體能進步多少，zone 都不會移動。</li>
+        </ul>
+        </div></div>
+        <p class="pc-use">
+          <b><span lang="en">Use when</span><span lang="zh">何時使用</span></b>
+          <span lang="en">Nothing else is available, or you want a rough starting point.</span>
+          <span lang="zh">沒有其他選擇，或者只想要一個粗略起點。</span>
+        </p>
+      </div>
+    </div>
+
+    <h3><span lang="en">And heart rate itself — against pace and power</span><span lang="zh">心率本身 — 對比配速與功率</span></h3>
+    <div class="two" style="margin-top:6px">
+      <div>
+        <p class="pc-head"><span lang="en">What heart rate does well</span><span lang="zh">心率的長處</span></p>
+        <ul class="pc-list pro">
+          <li lang="en">It measures <strong>internal</strong> load — what the effort is costing you, not what the ground is doing.</li>
+          <li lang="zh">它量度的是<strong>內部</strong>負荷 — 這次努力對你的代價，而不是地面對你做了什麼。</li>
+          <li lang="en">It works across every sport with one cheap sensor.</li>
+          <li lang="zh">一個便宜感測器就能橫跨所有運動項目使用。</li>
+          <li lang="en">It exposes heat stress, dehydration and accumulated fatigue that pace hides.</li>
+          <li lang="zh">它會暴露熱壓力、脫水與累積疲勞 — 這些配速看不出來。</li>
+        </ul>
+      </div>
+      <div>
+        <p class="pc-head"><span lang="en">Where it fails</span><span lang="zh">心率的短處</span></p>
+        <ul class="pc-list con">
+          <li lang="en">It lags effort<i data-g="lag"></i> by 1–3 minutes, so short intervals are beyond it.</li>
+          <li lang="zh">比強度滯後<i data-g="lag"></i> 1–3 分鐘，所以短間歇它處理不了。</li>
+          <li lang="en">It drifts<i data-g="drift"></i> within a single session at constant effort.</li>
+          <li lang="zh">同一課節內即使強度不變，它也會漂移<i data-g="drift"></i>。</li>
+          <li lang="en">Sleep, caffeine, illness and heat all move it by 10 bpm or more.</li>
+          <li lang="zh">睡眠、咖啡因、生病與高溫都會令它移動 10 bpm 以上。</li>
+        </ul>
+      </div>
+    </div>
+    <p lang="en"><strong>The sane answer is to use both.</strong> Govern long steady work and monitor cost with heart rate; govern intervals and pacing with pace or power. Where the two disagree on an easy day — pace says easy, heart rate says Zone 3 — believe the heart rate and slow down.</p>
+    <p lang="zh"><strong>務實的做法是兩者並用。</strong>長時間穩定訓練與監察代價用心率；間歇與控速用配速或功率。若在輕鬆日兩者出現分歧 — 配速說輕鬆、心率說 Zone 3 — 相信心率，慢下來。</p>
+  </section>
+
+  <section class="chap panel prose" id="s6">
+    <div class="chaphead"><span class="chapnum">07</span></div>
+    <h2><span lang="en">Estimating HRmax — four equations, one caveat</span><span lang="zh">估算 HRmax — 四條公式，一個警告</span></h2>
+    <p lang="en">If you have not tested your HRmax, the calculator estimates it. Every one of these is a population regression<i data-g="regression"></i>: it predicts the average person of your age, and says nothing about you.</p>
+    <p lang="zh">如果你未曾實測 HRmax，計算機會替你估算。以下每一條都是群體回歸<i data-g="regression"></i>：它預測的是與你同齡的「平均人」，對你本人毫無說明力。</p>
+    <dl class="formulas" lang="en">
+      <dt>208 − 0.7 × age</dt>
+      <dd><strong>Tanaka 2001<i data-g="tanaka"></i>.</strong> Meta-analysis of 351 studies, 18,712 subjects, r = −0.90 with age, plus a lab validation on 514 more. The general-purpose default.</dd>
+      <dt>206 − 0.88 × age</dt>
+      <dd><strong>Gulati 2010<i data-g="gulati"></i>.</strong> 5,437 asymptomatic women. Default for women here, because the classic equations were built on male cohorts and overestimate women's HRmax — at 30, the difference from 220 − age is about 10 bpm, which pushes every zone up with it.</dd>
+      <dt>211 − 0.64 × age</dt>
+      <dd><strong>Nes 2013<i data-g="nes"></i>.</strong> HUNT Fitness Study, Norway. Reports its standard deviation plainly, at about 10.8 bpm.</dd>
+      <dt>220 − age</dt>
+      <dd><strong>Fox<i data-g="fox"></i>.</strong> No original dataset, no validation cohort, and it underestimates badly past 40. Included so you can see how far off it is, not because you should use it.</dd>
+    </dl>
+    <dl class="formulas" lang="zh">
+      <dt>208 − 0.7 × 年齡</dt>
+      <dd><strong>Tanaka 2001<i data-g="tanaka"></i>。</strong>統合分析 351 項研究、18,712 名受試者，與年齡相關系數 r = −0.90，另有 514 人的實驗室驗證。通用預設。</dd>
+      <dt>206 − 0.88 × 年齡</dt>
+      <dd><strong>Gulati 2010<i data-g="gulati"></i>。</strong>5,437 名無症狀女性。本頁女性預設，因為傳統公式建基於男性樣本，會高估女性 HRmax — 30 歲時與 220 − 年齡相差約 10 bpm，而這個差距會把所有 zone 一併推高。</dd>
+      <dt>211 − 0.64 × 年齡</dt>
+      <dd><strong>Nes 2013<i data-g="nes"></i>。</strong>挪威 HUNT Fitness Study。清楚交代標準差約為 10.8 bpm。</dd>
+      <dt>220 − 年齡</dt>
+      <dd><strong>Fox<i data-g="fox"></i>。</strong>無原始數據、無驗證樣本，40 歲之後嚴重低估。收錄它只是讓你看到它偏離多遠，不是建議你用。</dd>
+    </dl>
+  </section>
+
+  <section class="chap panel prose" id="s7">
+    <div class="chaphead"><span class="chapnum">08</span></div>
+    <h2><span lang="en">The error, worked all the way through</span><span lang="zh">誤差，從頭到尾算一次</span></h2>
+    <p class="lede">
+      <span lang="en">This is the part other calculators leave out, and it is the reason this one exists.</span>
+      <span lang="zh">這是其他計算機略過的一節，也是這一個存在的理由。</span>
+    </p>
+    <p lang="en">Age equations carry a standard deviation<i data-g="sd"></i> of roughly ±10 bpm. That is not a rounding detail — it means about one athlete in three sits further from the prediction than that. And the error does not stay in HRmax; it propagates into every boundary you derive from it. Take a 42-year-old using Tanaka, on the %HRmax model:</p>
+    <p lang="zh">年齡公式的標準差<i data-g="sd"></i>約為 ±10 bpm。這不是四捨五入的小事 — 它代表大約每三名運動員就有一名偏離預測值比這更遠。而且誤差不會停留在 HRmax，它會傳遞到你由它推導出來的每一條界線。以一名 42 歲、使用 Tanaka、採 %HRmax 模型的人為例：</p>
+    <div class="calcbox">
+      <dl>
+        <dt><span lang="en">Estimated HRmax — 208 − 0.7 × 42</span><span lang="zh">估算 HRmax — 208 − 0.7 × 42</span></dt><dd>179 bpm</dd>
+        <dt><span lang="en">Standard deviation of that estimate</span><span lang="zh">該估算的標準差</span></dt><dd>± 10 bpm</dd>
+        <dt><span lang="en">Zone 4 floor — 80% of HRmax</span><span lang="zh">Zone 4 下限 — HRmax 的 80%</span></dt><dd>143 bpm</dd>
+        <dt><span lang="en">Error at that boundary — 0.80 × 10</span><span lang="zh">該界線上的誤差 — 0.80 × 10</span></dt><dd>± 8 bpm</dd>
+        <dt><span lang="en">So the true Zone 4 floor lies somewhere in</span><span lang="zh">所以真正的 Zone 4 下限落在</span></dt><dd>135 – 151 bpm</dd>
+        <dt class="tot"><span lang="en">Width of Zone 4 itself (143–161)</span><span lang="zh">Zone 4 本身的闊度（143–161）</span></dt><dd class="tot">18 bpm</dd>
+      </dl>
+    </div>
+    <div lang="en">
+      <p><strong>The uncertainty in where Zone 4 starts is almost as wide as Zone 4.</strong> Said plainly: an age-estimated Zone 4 boundary is barely a boundary at all. It is a suggestion with a 16 bpm error bar around it.</p>
+      <p>This is why the calculator shades those bands on the bpm scale rather than printing four confident-looking numbers, and why every boundary in the table carries its own ± figure while HRmax is estimated. Enter a tested HRmax and the bands disappear, because the error genuinely does.</p>
+    </div>
+    <div lang="zh">
+      <p><strong>「Zone 4 從哪裡開始」的不確定性，闊度幾乎等於整個 Zone 4。</strong>說白一點：由年齡估算出來的 Zone 4 界線，根本算不上是一條界線，它只是一個附帶 16 bpm 誤差範圍的建議。</p>
+      <p>所以本計算機會在 bpm 刻度上畫出陰影帶，而不是印四個看起來很肯定的數字；也所以在 HRmax 屬估算值時，表中每條界線都各自帶有自己的 ± 數值。一旦填入實測 HRmax，陰影帶就會消失，因為那時誤差確實不存在。</p>
+    </div>
+  </section>
+
+  <section class="chap panel prose" id="s8">
+    <div class="chaphead"><span class="chapnum">09</span></div>
+    <h2><span lang="en">Zone by zone — what each one actually buys you</span><span lang="zh">逐個 Zone 拆解 — 每一個究竟換到什麼</span></h2>
+    <div class="two" style="margin-top:12px" lang="en">
+      <div>
+        <h3>Z1 · Recovery</h3>
+        <p>Blood flow without adding fatigue. It is not training, and treating it as training is the most common way athletes ruin the next hard session. Full sentences, nose breathing.</p>
+        <h3>Z2 · Endurance</h3>
+        <p>Where most of the week belongs. Fat oxidation, capillary and mitochondrial density<i data-g="adapt"></i>, durability — the adaptations that raise threshold from below. Slow to arrive, and they need hours rather than effort.</p>
+        <h3>Z3 · Tempo</h3>
+        <p>Real aerobic stimulus, but it carries a recovery cost close to threshold work without the same return. Use it deliberately or not at all; drifting into Z3 on easy days is how a training week quietly becomes mediocre in both directions.</p>
+      </div>
+      <div>
+        <h3>Z4 · Threshold</h3>
+        <p>Right at the edge of metabolic steady state<i data-g="steady"></i>. This is what raises the ceiling on sustainable pace. Cruise intervals and steady blocks of 8–20 minutes; sustainable 40–60 minutes at absolute most.</p>
+        <h3>Z5 · VO2max</h3>
+        <p>Aerobic power, in intervals of 3–8 minutes with full recoveries. Note the floor: heart rate lags<i data-g="lag"></i> by 1–3 minutes, so for anything shorter the number on your wrist is still climbing when the repetition ends. Those sessions are governed by pace or power, not by this table.</p>
+        <h3>Why Friel splits Z5<i data-g="z5abc"></i></h3>
+        <p>Because one label was hiding three different sessions: 5a short threshold work, 5b VO2max intervals, 5c anaerobic capacity. Same zone on the chart, entirely different weeks.</p>
+      </div>
+    </div>
+    <div class="two" style="margin-top:12px" lang="zh">
+      <div>
+        <h3>Z1 · 恢復</h3>
+        <p>增加血流而不增加疲勞。它不是訓練；把它當成訓練，是運動員毀掉下一課高強度訓練最常見的方式。可講完整句子，能用鼻呼吸。</p>
+        <h3>Z2 · 耐力</h3>
+        <p>一週訓練的大部分應該在這裡。脂肪氧化、微血管與粒線體密度<i data-g="adapt"></i>、耐久力 — 這些是從下方把閾值頂上去的適應。它們來得慢，需要的是時數，不是用力。</p>
+        <h3>Z3 · 節奏</h3>
+        <p>有真實的有氧刺激，但恢復成本接近閾值訓練，回報卻不相同。要用就刻意去用，否則完全不用；輕鬆日不知不覺漂進 Z3，正是一週訓練在兩個方向上同時變得平庸的原因。</p>
+      </div>
+      <div>
+        <h3>Z4 · 閾值</h3>
+        <p>正好處於代謝穩態<i data-g="steady"></i>的邊緣。這是提升可持續配速上限的訓練。巡航間歇與穩定段落，每次 8–20 分鐘；最多只能維持 40–60 分鐘。</p>
+        <h3>Z5 · VO2max</h3>
+        <p>有氧功率，以 3–8 分鐘間歇搭配完整恢復進行。請留意下限：心率有 1–3 分鐘的滯後<i data-g="lag"></i>，任何比這更短的反覆，結束時手錶上的數字仍在上升。那類課節由配速或功率主導，不是由這張表主導。</p>
+        <h3>為何 Friel 要細分 Z5<i data-g="z5abc"></i></h3>
+        <p>因為單一個標籤其實掩蓋了三種不同課節：5a 短時間閾值訓練、5b VO2max 間歇、5c 無氧能力。圖上是同一個 zone，實際卻是完全不同的訓練週。</p>
+      </div>
+    </div>
+  </section>
+
+
+  <section class="chap panel prose" id="s8b">
+    <div class="chaphead"><span class="chapnum">10</span></div>
+    <h2><span lang="en">Using the five zones — sessions and weekly shape</span><span lang="zh">五個 Zone 的實際用法 — 課節與一週結構</span></h2>
+    <p class="lede">
+      <span lang="en">A zone table tells you where the boundaries are. It does not tell you how much time to spend on each side of them. That is the part that decides whether the training works.</span>
+      <span lang="zh">Zone 表告訴你界線在哪裡，但沒有告訴你應該在每條界線的兩邊各花多少時間。而後者才決定訓練有沒有效。</span>
+    </p>
+
+    <h3><span lang="en">How a week is shaped</span><span lang="zh">一週應該長成什麼樣</span></h3>
+    <p lang="en">Distribution models group the five zones into three buckets: <strong>easy</strong> (Z1–Z2), <strong>moderate</strong> (Z3), and <strong>hard</strong> (Z4–Z5). These figures are approximate and describe time, not sessions.</p>
+    <p lang="zh">分布模型把五個 zone 歸納為三組：<strong>輕鬆</strong>（Z1–Z2）、<strong>中等</strong>（Z3）、<strong>高強度</strong>（Z4–Z5）。以下數字為約數，指的是時間比例而非課節數目。</p>
+
+    <div class="dist">
+      <div class="dist-row">
+        <div class="dist-name"><span lang="en">Polarized</span><span lang="zh">極化模型</span>
+          <small><span lang="en">Seiler · elite endurance</span><span lang="zh">Seiler · 精英耐力</span></small></div>
+        <div class="dist-bar">
+          <div class="dist-seg" style="flex:80;background:var(--z2)">80%</div>
+          <div class="dist-seg" style="flex:5;background:var(--z4)"></div>
+          <div class="dist-seg" style="flex:15;background:var(--z5)">15%</div>
+        </div>
+      </div>
+      <div class="dist-row">
+        <div class="dist-name"><span lang="en">Pyramidal</span><span lang="zh">金字塔模型</span>
+          <small><span lang="en">Common in marathon blocks</span><span lang="zh">馬拉松備戰常見</span></small></div>
+        <div class="dist-bar">
+          <div class="dist-seg" style="flex:75;background:var(--z2)">75%</div>
+          <div class="dist-seg" style="flex:18;background:var(--z4)">18%</div>
+          <div class="dist-seg" style="flex:7;background:var(--z5)">7%</div>
+        </div>
+      </div>
+      <div class="dist-row warnrow">
+        <div class="dist-name"><span lang="en">The drift to avoid</span><span lang="zh">要避免的漂移</span>
+          <small><span lang="en">What many amateurs actually do</span><span lang="zh">不少業餘者實際的樣子</span></small></div>
+        <div class="dist-bar">
+          <div class="dist-seg" style="flex:45;background:var(--z2)">45%</div>
+          <div class="dist-seg" style="flex:45;background:var(--z4)">45%</div>
+          <div class="dist-seg" style="flex:10;background:var(--z5)">10%</div>
+        </div>
+      </div>
+      <div class="dist-legend">
+        <span><i style="background:var(--z2)"></i><span lang="en">Easy · Z1–Z2</span><span lang="zh">輕鬆 · Z1–Z2</span></span>
+        <span><i style="background:var(--z4)"></i><span lang="en">Moderate · Z3</span><span lang="zh">中等 · Z3</span></span>
+        <span><i style="background:var(--z5)"></i><span lang="en">Hard · Z4–Z5</span><span lang="zh">高強度 · Z4–Z5</span></span>
+      </div>
+    </div>
+
+    <p lang="en">The third row is the one worth staring at. It is not a published model — it is the pattern coaches see over and over: easy days run too hard, hard days run too soft, and almost everything lands in the middle. It produces a training week that is simultaneously too tired to recover from and too soft to adapt to. The fix is not more effort; it is <strong>more difference between days</strong>.</p>
+    <p lang="zh">值得盯著看的是第三行。它不是一個已發表的模型 — 它是教練反覆見到的模式：輕鬆日跑得太用力、高強度日又跑得不夠狠，結果幾乎所有時間都落在中間。這樣的一週既累得無法恢復，又軟得產生不了適應。解法不是更用力，而是<strong>讓不同日子之間的差距更大</strong>。</p>
+    <p class="note" lang="en">Seiler's observation that elite endurance athletes spend roughly 80% of their time at low intensity is well replicated. The precise split, and whether polarized beats pyramidal, is still argued over in the literature — the agreed part is that the bulk of volume belongs in the easy bucket.</p>
+    <p class="note" lang="zh">Seiler 觀察到精英耐力運動員約 80% 時間處於低強度，這點已被反覆驗證。至於確切比例、以及極化是否優於金字塔，文獻上仍有爭論 — 有共識的部分是：訓練量的主體應該落在輕鬆那一組。</p>
+
+    <h3><span lang="en">What a session in each zone looks like</span><span lang="zh">每個 Zone 的典型課節</span></h3>
+    <div class="tbl-scroll">
+      <table class="sessions">
+        <thead><tr>
+          <th><span lang="en">Zone</span><span lang="zh">區間</span></th>
+          <th><span lang="en">Typical session</span><span lang="zh">典型課節</span></th>
+          <th><span lang="en">Time in zone</span><span lang="zh">區間內時間</span></th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Z1</td>
+            <td><span lang="en">Recovery jog or easy spin, the day after hard work. Warm-ups and cool-downs.</span><span lang="zh">高強度訓練翌日的恢復慢跑或輕鬆踩。以及熱身與緩和。</span></td>
+            <td>20–45 min</td></tr>
+          <tr><td>Z2</td>
+            <td><span lang="en">The long run or ride, and most weekday aerobic volume. Conversational throughout.</span><span lang="zh">長課，以及平日大部分有氧訓練量。全程可對話。</span></td>
+            <td>45 min – 3 h+</td></tr>
+          <tr><td>Z3</td>
+            <td><span lang="en">A steady tempo block, or the final third of a progression run. Deliberate, never accidental.</span><span lang="zh">穩定的節奏段落，或漸進跑的最後三分之一。刻意安排，絕非誤入。</span></td>
+            <td>20–40 min</td></tr>
+          <tr><td>Z4</td>
+            <td><span lang="en">4 × 8 min with 2 min jog, or 2 × 20 min with 5 min. Cruise intervals.</span><span lang="zh">4 × 8 分鐘配 2 分鐘慢跑，或 2 × 20 分鐘配 5 分鐘。巡航間歇。</span></td>
+            <td>20–40 min <span lang="en">total</span><span lang="zh">合計</span></td></tr>
+          <tr><td>Z5</td>
+            <td><span lang="en">5 × 3 min with 3 min recovery, or 6 × 800 m. Governed by pace, not by HR.</span><span lang="zh">5 × 3 分鐘配 3 分鐘恢復，或 6 × 800 米。以配速主導，不是心率。</span></td>
+            <td>12–25 min <span lang="en">total</span><span lang="zh">合計</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3><span lang="en">Five ways people get this wrong</span><span lang="zh">五個常見錯誤</span></h3>
+    <ol lang="en">
+      <li><strong>Grey-zone creep.</strong> Easy days run at Z3 because it feels productive. It is the single most common reason a consistent athlete stops improving.</li>
+      <li><strong>Using heart rate to govern short intervals.</strong> It lags 1–3 minutes; a 90-second rep is finished before the number arrives.</li>
+      <li><strong>Chasing the zone in heat.</strong> On a hot day the same effort sits a zone higher. Run the effort, not the number, and expect the number to be wrong.</li>
+      <li><strong>Never retesting.</strong> Zones set in January are wrong by April if the training worked. That is the good outcome, and it still makes the table wrong.</li>
+      <li><strong>Treating Z1 as training.</strong> It is not. Its whole job is to add circulation without adding fatigue.</li>
+    </ol>
+    <ol lang="zh">
+      <li><strong>灰色地帶漂移。</strong>輕鬆日跑到 Z3，因為感覺「有做嘢」。這是穩定訓練的人停止進步的頭號原因。</li>
+      <li><strong>用心率主導短間歇。</strong>它滯後 1–3 分鐘；90 秒的反覆做完了，數字才剛剛爬上來。</li>
+      <li><strong>高溫天追 zone。</strong>熱天同樣強度會高一個 zone。跑你的強度，不要跑那個數字，並預期數字本身就是錯的。</li>
+      <li><strong>從不重測。</strong>一月定下的 zone，如果訓練有效，四月就已經錯了。那是好結果，但表格依然是錯的。</li>
+      <li><strong>把 Z1 當成訓練。</strong>它不是。它唯一的任務是增加循環而不增加疲勞。</li>
+    </ol>
+
+    <h3><span lang="en">Day to day</span><span lang="zh">日常運用</span></h3>
+    <ul lang="en">
+      <li>Put the boundaries into your watch as heart-rate alerts, then stop looking at the screen. An alert when you leave the zone beats staring at a number that lags anyway.</li>
+      <li>Review time-in-zone <strong>weekly, not per session</strong>. Distribution is a property of the week; a single session tells you almost nothing about it.</li>
+      <li>If the weekly view shows a fat Z3 block on days that were meant to be easy, that is grey-zone creep, and it is the first thing to fix.</li>
+      <li>Retest the anchor every 6–10 weeks, and after any block that noticeably changed your fitness.</li>
+    </ul>
+    <ul lang="zh">
+      <li>把界線設成手錶的心率警示，然後不要再盯著屏幕。離開 zone 時響一下，好過一直盯著一個本來就滯後的數字。</li>
+      <li><strong>以週為單位</strong>檢視各 zone 時間分布，不要逐課看。分布是一整週的屬性，單一課節幾乎說明不了什麼。</li>
+      <li>如果週檢視顯示本應輕鬆的日子有一大塊 Z3，那就是灰色地帶漂移，應該最優先處理。</li>
+      <li>每 6–10 週重測錨值，以及在任何明顯改變體能的訓練期之後重測。</li>
+    </ul>
+  </section>
+
+  <section class="chap panel prose" id="s9">
+    <div class="chaphead"><span class="chapnum">11</span></div>
+    <h2><span lang="en">Measure the anchor instead of guessing it</span><span lang="zh">與其估算錨值，不如量度它</span></h2>
+    <div class="two" style="margin-top:12px" lang="en">
+      <div>
+        <h3>LTHR — the 30-minute time trial</h3>
+        <ol>
+          <li>Warm up thoroughly: 15–20 minutes, including two or three short accelerations.</li>
+          <li>Go hard for 30 minutes, <strong>alone</strong>, on flat ground or a steady climb, as if racing. No training partners, no drafting, no pacing help.</li>
+          <li>Lap the watch at 10 minutes. Your LTHR is the <strong>average heart rate of the last 20 minutes only</strong>.</li>
+          <li>Repeat every 6–10 weeks, or after any block that noticeably changes your fitness.</li>
+        </ol>
+        <p class="note">Going out too hard is the usual failure. If your heart rate falls through the second half, the test is invalid — rest and redo it.</p>
+      </div>
+      <div>
+        <h3>HRmax — a maximal effort, done deliberately</h3>
+        <ol>
+          <li>Only when rested and healthy, never inside a hard training block.</li>
+          <li>Warm up 15–20 minutes, to a proper sweat.</li>
+          <li>Run or ride 3 × 3 minutes at the hardest pace you can hold, with 2–3 minutes easy between, each repeat harder than the last, and an all-out sprint in the final 30 seconds.</li>
+          <li>Your HRmax is the single highest reading. Uphill efforts usually produce the highest values in running.</li>
+        </ol>
+        <div class="warn">
+          <p><strong>Do not do this test</strong> if you have any known cardiac condition, chest pain, uncontrolled hypertension, or have been sedentary and are over roughly 40 — get medical clearance first. Maximal exercise testing carries real, if small, cardiac risk.</p>
+        </div>
+      </div>
+    </div>
+    <div class="two" style="margin-top:12px" lang="zh">
+      <div>
+        <h3>LTHR — 30 分鐘計時測試</h3>
+        <ol>
+          <li>充分熱身：15–20 分鐘，包括兩至三次短加速。</li>
+          <li><strong>獨自</strong>全力進行 30 分鐘，在平路或穩定上坡，當成比賽一樣。不可有陪練、不可跟車、不可有人協助控速。</li>
+          <li>在第 10 分鐘按 lap。你的 LTHR 就是<strong>最後 20 分鐘的平均心率</strong>。</li>
+          <li>每 6–10 週重測一次，或在任何明顯改變體能的訓練期之後重測。</li>
+        </ol>
+        <p class="note">最常見的失敗是頭段衝得太急。如果後半段心率持續下跌，測試無效 — 休息後重做。</p>
+      </div>
+      <div>
+        <h3>HRmax — 刻意進行的一次最大努力</h3>
+        <ol>
+          <li>只在休息充足、身體健康時進行，絕不可在高強度訓練期之內做。</li>
+          <li>熱身 15–20 分鐘，直到真正出汗。</li>
+          <li>以能夠維持的最快配速跑或踩 3 × 3 分鐘，中間輕鬆 2–3 分鐘，每一組都比上一組更用力，最後 30 秒全力衝刺。</li>
+          <li>你的 HRmax 就是當中最高的單一讀數。跑步時，上坡通常能測出最高值。</li>
+        </ol>
+        <div class="warn">
+          <p><strong>不要進行這個測試</strong>，如果你有任何已知心臟疾病、胸痛、未受控制的高血壓，或長期缺乏運動而年齡約在 40 歲以上 — 請先取得醫生許可。最大運動測試帶有真實（雖然不大）的心臟風險。</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="chap panel prose" id="s10">
+    <div class="chaphead"><span class="chapnum">12</span></div>
+    <h2><span lang="en">What heart rate cannot tell you</span><span lang="zh">心率告訴不了你的事</span></h2>
+    <div class="two" style="margin-top:12px" lang="en">
+      <div>
+        <h3>Medication invalidates all of it</h3>
+        <p>Beta-blockers<i data-g="beta"></i> and other rate-controlling drugs suppress both resting and maximal heart rate, by amounts that vary with the drug and the dose. No equation on this site applies. Zones must come from a supervised test taken on your current medication, read by a clinician or a coach working with one.</p>
+        <h3>Heart rate lags</h3>
+        <p>One to three minutes behind a change in effort. Anything shorter than about three minutes is not a heart-rate session, whatever the watch displays afterwards.</p>
+      </div>
+      <div>
+        <h3>The same effort, a different number</h3>
+        <p>Cardiac drift<i data-g="drift"></i> pushes heart rate upward through a long session at fixed pace. Heat, dehydration, altitude, caffeine, illness, poor sleep and accumulated fatigue all move it, sometimes by 10 bpm or more. A reading outside its zone on a given day is information about the day, not an error in the table.</p>
+        <h3>Cross-check with the talk test<i data-g="talk"></i></h3>
+        <p>It is free, needs no device, and it is individual to you. If the talk test and the table disagree consistently in the same direction, your anchor value is wrong. Retest it rather than forcing the sessions to fit.</p>
+      </div>
+    </div>
+    <div class="two" style="margin-top:12px" lang="zh">
+      <div>
+        <h3>藥物令一切失效</h3>
+        <p>β-受體阻斷劑<i data-g="beta"></i>及其他控制心率的藥物，會同時壓低靜止與最大心率，幅度視乎藥物與劑量。本網站所有公式均不適用。Zone 必須來自在現行用藥狀態下進行的監測測試，並由臨床醫生、或與醫生合作的教練判讀。</p>
+        <h3>心率有滯後</h3>
+        <p>比強度改變慢一至三分鐘。任何短於約三分鐘的訓練都不是心率課節，無論手錶事後顯示什麼。</p>
+      </div>
+      <div>
+        <h3>同樣強度，不同數字</h3>
+        <p>心血管漂移<i data-g="drift"></i>會令長課節在配速不變下心率持續上升。高溫、脫水、高海拔、咖啡因、生病、睡眠不足與累積疲勞都會令它移動，有時達 10 bpm 以上。某一天讀數落在 zone 之外，那是關於那一天的資訊，而不是表格出錯。</p>
+        <h3>用談話測試<i data-g="talk"></i>交叉驗證</h3>
+        <p>它免費、不需器材，而且完全因人而異。如果談話測試與表格長期在同一方向上不吻合，那是你的錨值錯了。應該重測錨值，而不是硬把訓練塞進表格。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="chap panel prose" id="s11">
+    <div class="chaphead"><span class="chapnum">13</span></div>
+    <h2><span lang="en">References</span><span lang="zh">參考文獻</span></h2>
+    <ul>
+      <li>Tanaka H, Monahan KD, Seals DR. <em>Age-predicted maximal heart rate revisited.</em> J Am Coll Cardiol, 2001.</li>
+      <li>Gulati M et al. <em>Heart rate response to exercise stress testing in asymptomatic women</em> (St. James Women Take Heart Project). Circulation, 2010.</li>
+      <li>Nes BM et al. <em>Age-predicted maximal heart rate in healthy subjects: the HUNT Fitness Study.</em> Scand J Med Sci Sports, 2013.</li>
+      <li>Karvonen MJ, Kentala E, Mustala O. <em>The effects of training on heart rate.</em> Ann Med Exp Biol Fenn, 1957.</li>
+      <li>Swain DP, Leutholtz BC. <em>Heart rate reserve is equivalent to %VO2 reserve, not to %VO2max.</em> Med Sci Sports Exerc, 1994.</li>
+      <li>Friel J. <em>The Triathlete's Training Bible</em>, and his published quick guide to setting training zones.</li>
+      <li>American College of Sports Medicine. <em>Guidelines for Exercise Testing and Prescription.</em></li>
+    </ul>
+    <p class="note" lang="en">Standard-deviation figures used by the calculator are approximate values drawn from these cohorts. They are shown to convey the scale of the uncertainty, not as precise published statistics — where a paper does not state its spread plainly, a conservative ±10 bpm is assumed.</p>
+    <p class="note" lang="zh">計算機所用的標準差，是取自上述研究的約數。它們用以表達不確定性的量級，而非精確引用的統計量 — 若原文沒有明確交代離散程度，一律保守假設為 ±10 bpm。</p>
+  </section>
+
+  </div>
+</div>
+
+<footer>
+  <p lang="en">Companion to the Threshold Zone Bench calculator. Not medical advice — consult a physician before beginning maximal exercise testing or a new training programme.</p>
+  <p lang="zh">Threshold Zone Bench 計算機的配套文件。非醫療建議 — 在開始最大運動測試或新訓練計劃之前，請先諮詢醫生。</p>
+  <p class="sitecredit">Peter Lau · <a href="/">lauyiucheung.com</a></p>
+</footer>
+</div>
+
+<script src="lang.js"></script>
+<script src="glossary.js"></script>
+<script>
+(function(){
+  var CALC_URL = "https://claude.ai/artifact/Ehs5V3FEbhM2psiGnzkCti";
+  if (/claude\.ai$/.test(location.hostname)){
+    document.querySelectorAll('a[href="index.html"]').forEach(function(a){
+      a.href = CALC_URL; a.target = "_blank"; a.rel = "noopener";
+    });
+  }
+})();
+</script>
+
+</body>
+</html>
