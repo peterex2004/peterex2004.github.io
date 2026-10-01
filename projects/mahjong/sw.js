@@ -1,5 +1,5 @@
 /* 離線用。只 cache app 本身——沒有任何網路請求要代理。 */
-const CACHE = 'mahjong-v2';
+const CACHE = 'mahjong-v3';
 const ASSETS = ['./', './index.html', './manifest.json', './icon.svg',
   './icon-180.png', './icon-192.png', './icon-512.png'];
 
