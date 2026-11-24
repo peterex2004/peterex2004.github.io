@@ -279,6 +279,11 @@ main {
   box-shadow: 0 0 0 1px var(--rule), 0 1px 2px var(--shadow);
 }
 
+.act { white-space: nowrap; }
+/* 五個掣同時出現（跑馬仔打完全場）時縮小字體，免得斷行 */
+.actions.tight { gap: .35rem; }
+.actions.tight .act { font-size: .82rem; padding-left: .2rem; padding-right: .2rem; }
+
 /* ══ tabs + panels ══ */
 .tabs {
   display: flex;
@@ -555,6 +560,37 @@ input[type=text], input[type=number] {
 .anchor select { flex: 0 0 6.2rem; }
 .anchor input { flex: 1; min-width: 0; }
 
+
+/* ── 成績報告 ── */
+.report-card { border-radius: 14px; overflow: hidden; border: 1px solid var(--rule); background: var(--surface); }
+.report-head { padding: .8rem 1rem; background: linear-gradient(var(--felt), var(--felt-deep)); color: #fff; }
+.report-head b { display: block; font-size: 1.05rem; }
+.report-head small { opacity: .8; font-size: .72rem; }
+.report-row { display: flex; align-items: center; gap: .6rem; padding: .62rem 1rem; border-top: 1px solid var(--rule); }
+.report-row:first-of-type { border-top: none; }
+.report-row .rk { flex: 0 0 1.8rem; font-size: 1.25rem; text-align: center; }
+.report-row .who { flex: 1; min-width: 0; font-weight: 600; }
+.report-row .who small { display: block; font-weight: 500; font-size: .68rem; color: var(--muted); }
+.report-row .amt { font-weight: 700; font-variant-numeric: tabular-nums; }
+.report-foot { padding: .6rem 1rem; border-top: 1px solid var(--rule); font-size: .72rem; color: var(--muted); line-height: 1.6; }
+
+/* ── 開局設定：座位位置同牌桌畫面一致 ── */
+.setup-table {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: .4rem;
+  align-items: center;
+}
+.setup-seat { display: flex; flex-direction: column; gap: .2rem; min-width: 0; }
+.setup-seat span { font-size: .72rem; font-weight: 600; color: var(--accent); text-align: center; }
+.setup-seat input { padding: .5rem .4rem; text-align: center; }
+.setup-seat.s0 { grid-area: 3 / 2; }
+.setup-seat.s1 { grid-area: 2 / 3; }
+.setup-seat.s2 { grid-area: 1 / 2; }
+.setup-seat.s3 { grid-area: 2 / 1; }
+.setup-mid { grid-area: 2 / 2; text-align: center; font-size: .78rem; color: var(--muted); }
+
 /* ── 轉盤（記一鋪牌用）── */
 .wheel-row { display: flex; gap: .6rem; margin-top: .9rem; }
 .wheel-col { flex: 1; min-width: 0; }
@@ -679,6 +715,8 @@ table.rates tr.anchor-row td { background: rgba(176,138,46,.14); }
   <button class="act" id="diceBtn">🎲 擲骰</button>
   <button class="act" id="drawBtn">流局</button>
   <button class="act" id="kongBtn" hidden>槓</button>
+  <button class="act" id="newBtn">新牌局</button>
+  <button class="act" id="reportBtn" hidden>📊 報告</button>
 </div>
 
 <nav class="tabs" role="tablist">
@@ -1032,6 +1070,19 @@ function consecutiveLabel(round            )                {
   return round.consecutive > 0 ? `連莊 ${round.consecutive}` : null;
 }
 
+/**
+ * 北風北（北圈最後一局）。香港麻雀在這一鋪流局不落莊（冧莊：整場就停在北尾），
+ * 其餘流局一律過莊（見 hk.ts／paoma.ts）。
+ */
+function isLastHand(round            )          {
+  return prevailingWind(round) === 3 && handWind(round) === 3;
+}
+
+/** 全場完：打完四圈（北風北之後輪到下一位莊家）。之後仍可繼續記，只是標題不再是「東圈東風」。 */
+function isGameOver(round            )          {
+  return round.dealerRotations >= 16;
+}
+
 /** 開啟新的一場。 */
 function initialRound(startDealerSeat       = 0)             {
   return { startDealerSeat, dealerRotations: 0, consecutive: 0 };
@@ -1072,7 +1123,7 @@ function setRound(
   };
 }
 
-return { dealerSeat, playerWind, handWind, prevailingWind, roundLabel, consecutiveLabel, initialRound, advance, setRound };
+return { dealerSeat, playerWind, handWind, prevailingWind, roundLabel, consecutiveLabel, isLastHand, isGameOver, initialRound, advance, setRound };
 })();
 
 const __m_settle = (() => {
@@ -1172,6 +1223,7 @@ return { makeSettle };
 
 const __m_hk = (() => {
 const { otherSeats } = __m_types;
+const { isLastHand } = __m_round;
 const { makeSettle } = __m_settle;
 /**
  * 香港麻雀計分引擎。
@@ -1181,6 +1233,7 @@ const { makeSettle } = __m_settle;
  * 資料來源：番數級距與全銃／半銃找數方式，對照粵文維基〈廣東麻雀籌碼計法〉
  * 與傳統講法「閒家三番四個籌碼，全銃出銃者十六個」驗證。
  */
+
 
 
 
@@ -1199,7 +1252,7 @@ const { makeSettle } = __m_settle;
                   
                    
                        
-                            
+                                                
                                  
   
 
@@ -1315,17 +1368,17 @@ function applyWin(
 const settle = makeSettle                   ({
   name: '香港麻雀',
   win: applyWin,
-  dealerKeepsOnDraw: (_ev, _round, config) => config.dealerContinuesOnDraw,
+  dealerKeepsOnDraw: (_ev, round, config) => config.dealerContinuesOnDraw || isLastHand(round),
 });
 
 /** App 截圖中的那七個玩法。 */
 const PRESETS                           = {
-  '3番4 半辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
-  '3番4 辣辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
-  '二五雞 半辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
-  '二五雞 辣辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
-  '五一 半辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
-  '五一 辣辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
+  '3番4 半辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: false },
+  '3番4 辣辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: false },
+  '二五雞 半辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: false },
+  '二五雞 辣辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: false },
+  '五一 半辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: false },
+  '五一 辣辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: false },
 };
 
 /** 自訂玩法的起點。使用者由此開始調整。 */
@@ -1335,7 +1388,7 @@ const CUSTOM_TEMPLATE           = {
   maxFaan: 10,
   scale: 'half',
   liability: 'full',
-  dealerContinuesOnDraw: true,
+  dealerContinuesOnDraw: false,
 };
 
 /** 封頂番數可選的範圍。八番滿糊最常見，但也有人打到十三番。 */
@@ -1548,6 +1601,7 @@ return { dealerTai, payment, settle, HKTW_PRESETS };
 const __m_paoma = (() => {
 const { applyWin, halfStepMultiplier, unitFor } = __m_hk;
 const { otherSeats } = __m_types;
+const { isLastHand } = __m_round;
 const { makeSettle } = __m_settle;
 /**
  * 跑馬仔（槓牌即時收錢）計分引擎。
@@ -1566,6 +1620,7 @@ const { makeSettle } = __m_settle;
  * 食糊（win 事件）的結算完全沿用 hk.ts 的 applyWin()：出銃／自摸／包自摸的邏輯
  * 一律不重寫；流局、罰錢、手動改數則由 settle.ts 的共用骨架處理。
  */
+
 
 
 
@@ -1616,16 +1671,16 @@ const settle = makeSettle                         ({
   name: '跑馬仔',
   win: applyWin,
   kong: applyKong,
-  dealerKeepsOnDraw: (_ev, _round, config) => config.dealerContinuesOnDraw,
+  dealerKeepsOnDraw: (_ev, round, config) => config.dealerContinuesOnDraw || isLastHand(round),
 });
 
 /** 跑馬仔常見玩法，槓數與 hk.ts 的 3番4／二五雞／五一 共用同一套番數表。 */
 const PAOMA_PRESETS                              = {
-  '跑馬仔3番4 半辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
-  '跑馬仔3番4 辣辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
-  '跑馬仔二五雞 半辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
-  '跑馬仔二五雞 辣辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: true },
-  '跑馬仔五一 半辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: true },
+  '跑馬仔3番4 半辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: false },
+  '跑馬仔3番4 辣辣上': { base: 4, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: false },
+  '跑馬仔二五雞 半辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: false },
+  '跑馬仔二五雞 辣辣上': { base: 8, minFaan: 3, maxFaan: 8, scale: 'full', liability: 'full', dealerContinuesOnDraw: false },
+  '跑馬仔五一 半辣上': { base: 16, minFaan: 3, maxFaan: 8, scale: 'half', liability: 'full', dealerContinuesOnDraw: false },
 };
 
 return { unitFor, halfStepMultiplier, settle, PAOMA_PRESETS };
@@ -2474,7 +2529,7 @@ return { serialize, deserialize, toCSV };
 })();
 
 const { WIND_NAMES } = __m_types;
-const { dealerSeat, playerWind, roundLabel, consecutiveLabel, setRound } = __m_round;
+const { dealerSeat, playerWind, roundLabel, consecutiveLabel, setRound, isGameOver } = __m_round;
 const { seatTotals, renamePlayer, swapSeats, substitutePlayer } = __m_session;
 const { CUSTOM, firstPreset, newGame, restoreGame, playHand, undo, canUndo } = __m_game;
 const { rollDice } = __m_dice;
@@ -2581,7 +2636,11 @@ function render() {
     el.append(w, n, a);
   }
 
-  $('roundLabel').textContent = roundLabel(session.round);
+  const over = isGameOver(session.round);
+  $('roundLabel').textContent = over ? '全場完' : roundLabel(session.round);
+  $('reportBtn').hidden = !over;
+  $('kongBtn').hidden = !variant().supportsKong;
+  document.querySelector('.actions').classList.toggle('tight', document.querySelectorAll('.actions .act:not([hidden])').length >= 5);
   const streak = consecutiveLabel(session.round);
   $('streak').textContent = streak ?? '';
   $('streak').hidden = !streak;
@@ -2592,7 +2651,6 @@ function render() {
   if (session.round.riichiSticks) noteParts.push(`供託 ${session.round.riichiSticks}`);
   $('ruleNote').textContent = noteParts.join('　·　');
   $('undo').disabled = !canUndo(session);
-  $('kongBtn').hidden = !variant().supportsKong;
 
   renderDice();
   renderLog();
@@ -2769,22 +2827,165 @@ function renderLog() {
 
 /* ── 統計數據：卡片 + 稱號 + 皇冠 ── */
 
-function shareResults() {
+/* ── 成績報告：畫面、文字、圖片三種呈現，資料只有 reportData() 一份 ── */
+
+function reportData() {
   const ids = session.roster.map((p) => p.id);
-  const rows = [...playerStats(session.hands, ids)].sort((a, b) => b.total - a.total);
-  const lines = [
-    `雀數 · ${roundLabel(session.round)}`,
-    ...rows.map((r, i) => `${i + 1}. ${nameOf(r.id)}　${fmt(r.total)}`),
-  ];
-  const text = lines.join('\n');
-  if (navigator.share) {
-    navigator.share({ text }).catch(() => {});
-  } else {
-    navigator.clipboard?.writeText(text).then(
+  const stats = playerStats(session.hands, ids);
+  const overall = sessionStats(session.hands);
+  const { badges, crowns } = computeBadges(stats);
+  const sorted = [...stats].sort((a, b) => b.total - a.total);
+  const medals = ['🥇', '🥈', '🥉', '4'];
+  let rank = 0;
+  const rows = sorted.map((r, i) => {
+    if (i === 0 || r.total !== sorted[i - 1].total) rank = i;
+    return { medal: medals[rank], name: nameOf(r.id), total: r.total, badge: badges.get(r.id) ?? '' };
+  });
+  const bits = [`流局 ${overall.draws}`, `自摸 ${overall.selfDraws}`, `最長連莊 ${overall.longestStreak}`];
+  if (crowns.wins) bits.push(`食糊王 ${nameOf(crowns.wins)}`);
+  return {
+    title: isGameOver(session.round) ? '雀數 · 全場成績' : '雀數 · 目前成績',
+    sub: `${session.presetName}　·　${overall.hands} 局　·　${new Date().toLocaleDateString('zh-TW')}`,
+    rows,
+    foot: bits.join('　·　'),
+  };
+}
+
+function reportText(d) {
+  return [d.title, d.sub, ...d.rows.map((r) => `${r.medal} ${r.name}　${fmt(r.total)}${r.badge ? `（${r.badge}）` : ''}`), d.foot].join('\n');
+}
+
+function reportImage(d) {
+  const W = 750, pad = 40, rowH = 104, headH = 150, footH = 90;
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = headH + rowH * d.rows.length + footH;
+  const g = canvas.getContext('2d');
+  const font = (px, weight = 600) => `${weight} ${px}px "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif`;
+  g.fillStyle = '#f6f4ee';
+  g.fillRect(0, 0, W, canvas.height);
+  const grad = g.createLinearGradient(0, 0, 0, headH);
+  grad.addColorStop(0, '#2f6b57');
+  grad.addColorStop(1, '#1d4a3b');
+  g.fillStyle = grad;
+  g.fillRect(0, 0, W, headH);
+  g.fillStyle = '#fff';
+  g.font = font(48, 700);
+  g.fillText(d.title, pad, 70);
+  g.globalAlpha = 0.8;
+  g.font = font(26, 500);
+  g.fillText(d.sub, pad, 115);
+  g.globalAlpha = 1;
+  d.rows.forEach((r, i) => {
+    const y = headH + i * rowH;
+    g.fillStyle = i % 2 ? '#f6f4ee' : '#ffffff';
+    g.fillRect(0, y, W, rowH);
+    g.fillStyle = '#222';
+    g.font = font(44, 600);
+    g.textAlign = 'center';
+    g.fillText(r.medal, pad + 30, y + 66);
+    g.textAlign = 'left';
+    g.font = font(38, 600);
+    g.fillText(r.name, pad + 90, y + (r.badge ? 52 : 65));
+    if (r.badge) {
+      g.fillStyle = '#7a7a72';
+      g.font = font(24, 500);
+      g.fillText(r.badge, pad + 90, y + 86);
+    }
+    g.fillStyle = r.total > 0 ? '#1f7a4d' : r.total < 0 ? '#b3402f' : '#666';
+    g.font = font(42, 700);
+    g.textAlign = 'right';
+    g.fillText(fmt(r.total), W - pad, y + 66);
+    g.textAlign = 'left';
+  });
+  g.fillStyle = '#7a7a72';
+  g.font = font(24, 500);
+  g.fillText(d.foot, pad, headH + rowH * d.rows.length + 54);
+  return new Promise((resolve) => canvas.toBlob(resolve, 'image/png'));
+}
+
+function openReport() {
+  const d = reportData();
+  openSheet(d.title, '分享前可以先看看。', (sheet) => {
+    const card = document.createElement('div');
+    card.className = 'report-card';
+    const head = document.createElement('div');
+    head.className = 'report-head';
+    const hb = document.createElement('b');
+    hb.textContent = d.title;
+    const hs = document.createElement('small');
+    hs.textContent = d.sub;
+    head.append(hb, hs);
+    card.append(head);
+    for (const r of d.rows) {
+      const row = document.createElement('div');
+      row.className = 'report-row';
+      const rk = document.createElement('span');
+      rk.className = 'rk';
+      rk.textContent = r.medal;
+      const who = document.createElement('span');
+      who.className = 'who';
+      who.textContent = r.name;
+      if (r.badge) {
+        const sm = document.createElement('small');
+        sm.textContent = r.badge;
+        who.append(sm);
+      }
+      const amt = document.createElement('span');
+      amt.className = `amt ${cls(r.total)}`;
+      amt.textContent = fmt(r.total);
+      row.append(rk, who, amt);
+      card.append(row);
+    }
+    const foot = document.createElement('div');
+    foot.className = 'report-foot';
+    foot.textContent = d.foot;
+    card.append(foot);
+    sheet.append(card);
+
+    const text = reportText(d);
+    const fileName = `雀數成績-${new Date().toISOString().slice(0, 10)}.png`;
+    const grid = document.createElement('div');
+    grid.className = 'grid two';
+    grid.style.marginTop = '.75rem';
+
+    const save = optionButton('💾 儲存圖片', null, true);
+    save.onclick = async () => {
+      const blob = await reportImage(d);
+      if (!blob) { toast('無法產生圖片'); return; }
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = fileName;
+      document.body.append(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast('已儲存圖片');
+    };
+
+    const wa = optionButton('💬 傳到 WhatsApp', null);
+    wa.onclick = () => window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+
+    const other = optionButton('📤 其他分享…', '訊息、Telegram、AirDrop…');
+    other.onclick = async () => {
+      try {
+        const blob = await reportImage(d);
+        const file = blob ? new File([blob], fileName, { type: 'image/png' }) : null;
+        if (file && navigator.canShare?.({ files: [file] })) await navigator.share({ files: [file], text });
+        else if (navigator.share) await navigator.share({ text });
+        else { await navigator.clipboard.writeText(text); toast('此瀏覽器不支援系統分享，已複製文字'); }
+      } catch { /* 使用者取消分享 */ }
+    };
+
+    const copy = optionButton('📋 複製文字', null);
+    copy.onclick = () => navigator.clipboard?.writeText(text).then(
       () => toast('已複製到剪貼簿'),
       () => toast('無法複製，請自行選取文字'),
     );
-  }
+
+    grid.append(save, wa, other, copy);
+    sheet.append(grid);
+  });
 }
 
 function renderStats() {
@@ -2805,8 +3006,8 @@ function renderStats() {
   const top = document.createElement('div');
   top.className = 'stat-top';
   const share = document.createElement('button');
-  share.textContent = '📤 分享賽果';
-  share.onclick = shareResults;
+  share.textContent = '📤 成績報告與分享';
+  share.onclick = openReport;
   top.append(share);
   box.append(top);
 
@@ -3437,8 +3638,12 @@ function openSettings() {
     exp.onclick = () => exportCSV();
     buttons.push(exp);
 
-    const fresh = optionButton('新牌局', '分數清零');
-    fresh.onclick = () => confirmReset();
+    const report = optionButton('成績報告', '查看與分享');
+    report.onclick = () => openReport();
+    buttons.push(report);
+
+    const fresh = optionButton('新牌局', '揀玩法、輸入名字');
+    fresh.onclick = () => openSetup();
     buttons.push(fresh);
 
     grid.append(...buttons);
@@ -3804,27 +4009,101 @@ function pickRound() {
   });
 }
 
-function confirmReset() {
-  openSheet('新牌局', '現在的分數與紀錄將全部清除。玩法、姓名與座位將會保留。', (sheet) => {
-    const row = document.createElement('div');
-    row.className = 'row';
-    const ok = optionButton('開新牌局', null, true);
-    ok.onclick = () => {
-      const keep = session.roster;
-      const seats = session.seats;
-      const name = session.presetName;
-      session = newGame(name, session.diceCount, { ...session.config });
-      session.presetName = name;
-      session.roster = keep;
-      session.seats = seats;
-      lastRoll = null;
-      closeSheet();
-      render();
-      toast('已開新牌局');
-    };
-    row.append(ok);
-    sheet.append(row);
-  });
+/**
+ * 開局設定：先揀玩法與檯例，再由每位玩家按自己坐的位置輸入名字，最後開始。
+ * 第一次開 app、以及設定裡的「新牌局」都用它；預設值取自目前的牌局，所以只想清零就直接按「開始」。
+ */
+function openSetup() {
+  let variantId = session.variantId;
+  let presetName = session.presetName;
+  const names = session.seats.map((pid) => nameOf(pid));
+
+  function build() {
+    const v = variantById(variantId);
+    const hasRecords = session.hands.length > 0 || session.pendingKongs.length > 0;
+    openSheet('開局設定', hasRecords ? '現在的分數與紀錄將全部清除。' : '先揀玩法，再請每位玩家按自己坐的位置輸入名字。', (sheet) => {
+      // ① 玩法
+      const variantField = document.createElement('div');
+      variantField.className = 'field';
+      variantField.innerHTML = '<label>① 玩法</label>';
+      const variantGrid = document.createElement('div');
+      variantGrid.className = 'grid two';
+      for (const vv of VARIANTS) {
+        const b = optionButton(vv.name, null);
+        b.classList.add('tight');
+        if (vv.id === variantId) b.classList.add('on');
+        b.onclick = () => {
+          variantId = vv.id;
+          presetName = Object.keys(vv.presets)[0];
+          build();
+        };
+        variantGrid.append(b);
+      }
+      variantField.append(variantGrid);
+      sheet.append(variantField);
+
+      // ② 檯例
+      const presetField = document.createElement('div');
+      presetField.className = 'field';
+      presetField.innerHTML = '<label>② 檯例</label>';
+      const presetGrid = document.createElement('div');
+      presetGrid.className = 'grid two';
+      for (const name of Object.keys(v.presets)) {
+        const b = optionButton(name, null);
+        b.classList.add('tight');
+        if (name === presetName) b.classList.add('on');
+        b.onclick = () => { presetName = name; build(); };
+        presetGrid.append(b);
+      }
+      presetField.append(presetGrid);
+      sheet.append(presetField);
+
+      // ③ 座位：位置與牌桌畫面一致（東在下、南在右、西在上、北在左）
+      const seatField = document.createElement('div');
+      seatField.className = 'field';
+      seatField.innerHTML = '<label>③ 各位按自己的位置，輸入名字</label>';
+      const table = document.createElement('div');
+      table.className = 'setup-table';
+      for (let seat = 0; seat < 4; seat++) {
+        const cell = document.createElement('label');
+        cell.className = `setup-seat s${seat}`;
+        const tag = document.createElement('span');
+        tag.textContent = `${WIND_NAMES[seat]}位`;
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 12;
+        input.placeholder = `玩家${'一二三四'[seat]}`;
+        input.value = /^玩家[一二三四]$/.test(names[seat]) ? '' : names[seat];
+        input.setAttribute('aria-label', `${WIND_NAMES[seat]}位玩家的名字`);
+        input.oninput = () => { names[seat] = input.value.trim(); };
+        cell.append(tag, input);
+        table.append(cell);
+      }
+      const mid = document.createElement('div');
+      mid.className = 'setup-mid';
+      mid.textContent = '牌桌';
+      table.append(mid);
+      seatField.append(table);
+      sheet.append(seatField);
+
+      const row = document.createElement('div');
+      row.className = 'row';
+      const ok = optionButton('開始', null, true);
+      ok.onclick = () => {
+        const sameRules = variantId === session.variantId && presetName === session.presetName;
+        const game = newGame(presetName, session.diceCount, sameRules ? { ...session.config } : null);
+        game.roster = game.roster.map((p, i) => ({ ...p, name: names[i] || p.name }));
+        session = game;
+        lastRoll = null;
+        closeSheet();
+        render();
+        toast('已開新牌局');
+      };
+      row.append(ok);
+      sheet.append(row);
+    });
+  }
+  build();
 }
 
 function exportCSV() {
@@ -3848,7 +4127,7 @@ function record(events, label) {
     lastRoll = null;
     closeSheet();
     render();
-    toast(label);
+    toast(isGameOver(session.round) ? '全場完！按「📊 報告」查看成績並分享' : label);
   } catch (err) {
     toast(`無法記錄：${err.message}`);
   }
@@ -3920,6 +4199,8 @@ for (let seat = 0; seat < 4; seat++) {
 
 $('drawBtn').onclick = pickDraw;
 $('kongBtn').onclick = pickKong;
+$('newBtn').onclick = openSetup;
+$('reportBtn').onclick = openReport;
 $('diceBtn').onclick = throwDice;
 $('settings').onclick = openSettings;
 
@@ -4011,10 +4292,13 @@ if ('wakeLock' in navigator) {
 }
 
 /* ── 啟動 ── */
-session = load() ?? newGame(firstPreset());
+const saved = load();
+const hadSaved = saved !== null;
+session = saved ?? newGame(firstPreset());
 setTab('log');
 render();
 if (session.hands.length > 0) toast(`接續上次：已打 ${session.hands.length} 局`);
+else if (!hadSaved) openSetup();
 
 </script>
 </body>
