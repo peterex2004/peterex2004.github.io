@@ -2193,8 +2193,9 @@ function firstPreset()         {
   return Object.keys(VARIANTS[0] .presets)[0] ;
 }
 
-function newGame(presetName        , diceCount = 3, configOverride          = null)       {
-  const v = variantOfPreset(presetName) ?? VARIANTS[0] ;
+function newGame(presetName        , diceCount = 3, configOverride          = null, variantId         )       {
+  // 自訂賠率（CUSTOM）不屬於任何一個現成玩法，要由呼叫方說明是哪一種麻雀
+  const v = (variantId ? VARIANTS.find((x) => x.id === variantId) : variantOfPreset(presetName)) ?? VARIANTS[0] ;
   return {
     id: String(Date.now()),
     variantId: v.id,
@@ -4091,7 +4092,7 @@ function openSetup() {
       const ok = optionButton('開始', null, true);
       ok.onclick = () => {
         const sameRules = variantId === session.variantId && presetName === session.presetName;
-        const game = newGame(presetName, session.diceCount, sameRules ? { ...session.config } : null);
+        const game = newGame(presetName, session.diceCount, sameRules ? { ...session.config } : null, variantId);
         game.roster = game.roster.map((p, i) => ({ ...p, name: names[i] || p.name }));
         session = game;
         lastRoll = null;
